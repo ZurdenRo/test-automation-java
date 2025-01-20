@@ -46,6 +46,6 @@ publishing {
 task printMessage {
     doLast {
         def tkn = System.getenv('MY_USER')
-        println 'This is a print ${tkn}'
+        println "This is a print ${tkn}"
     }
 }
