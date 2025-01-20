@@ -4,7 +4,10 @@ plugins {
 }
 
 group = 'com.company.qa'
+name = 'http-test-automation'
 version = '1.0.0'
+
+
 
 repositories {
     mavenCentral()
@@ -30,6 +33,7 @@ tasks.named('test') {
 }
 
 publishing {
+
     repositories {
         maven {
             name = "GitHubPackages"
