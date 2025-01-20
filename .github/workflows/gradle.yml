@@ -28,7 +28,7 @@ jobs:
     - name: Grant execute permission to Gradle wrapper
       run: chmod +x ./gradlew
 
-    - name: Run task printMessage
+    - name: Publish
       run: ./gradlew -i :http-test-automation:publish
       env:
         MY_USER: ${{ vars.USER }}
