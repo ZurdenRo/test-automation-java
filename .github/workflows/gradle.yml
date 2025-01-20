@@ -29,8 +29,8 @@ jobs:
       run: chmod +x ./gradlew
 
     - name: Run task printMessage
-      run: ./gradlew -i :http-test-automation:printMessage
+      run: ./gradlew -i :http-test-automation:publish
       env:
-        MY_USER: ${{ secrets.USER }}
-        A1: ${{ vars.USER }}
+        MY_USER: ${{ vars.USER }}
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 

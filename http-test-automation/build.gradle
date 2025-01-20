@@ -35,7 +35,7 @@ publishing {
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/octocat/hello-world"
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
+                username = System.getenv("MY_USER")
                 password = System.getenv("GITHUB_TOKEN")
             }
         }
