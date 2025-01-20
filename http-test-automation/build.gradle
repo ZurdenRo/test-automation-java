@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.company.qa'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation libs.guava
+    testImplementation libs.junit.jupiter
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+
