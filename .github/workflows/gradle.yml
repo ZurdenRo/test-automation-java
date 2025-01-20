@@ -32,5 +32,5 @@ jobs:
       run: ./gradlew -i :http-test-automation:printMessage
       env:
         MY_USER: ${{ secrets.USER }}
-        A1: ${{ secrets.GH_TOKEN.USER }}
+        A1: ${{ vars.development.NAME }}
 
