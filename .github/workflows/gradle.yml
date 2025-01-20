@@ -29,7 +29,8 @@ jobs:
       run: chmod +x ./gradlew
 
     - name: Run task printMessage
-      run: echo ${{secrets.GH_TOKEN.USER}}
+      run: ./gradlew -i :http-test-automation:printMessage
       env:
-        MY_USER: ${{secrets.GH_TOKEN.USER}}
+        MY_USER: ${{ secrets.USER }}
+        A1: ${{ secrets.GH_TOKEN.USER }}
 
