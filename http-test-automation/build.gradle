@@ -4,7 +4,6 @@ plugins {
 }
 
 group = 'com.company.qa'
-name = 'http-test-automation'
 version = '1.0.0'
 
 
