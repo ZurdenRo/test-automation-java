@@ -31,5 +31,5 @@ jobs:
     - name: Run task printMessage
       run: ./gradlew -i :http-test-automation:printMessage
       env:
-        MY_USER: ${{secrets.USER}}
+        MY_USER: ${{secrets.GH_TOKEN.USER}}
 
