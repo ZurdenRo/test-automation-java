@@ -6,8 +6,6 @@ plugins {
 group = 'com.company.qa'
 version = '1.0.0'
 
-
-
 repositories {
     mavenCentral()
 }
@@ -33,8 +31,23 @@ tasks.named('test') {
 
 publishing {
 
+    publications {
+        mavenJava(MavenPublication) {
+
+
+            groupId = 'com.company.qa'
+            artifactId = 'library'
+            version = '1.1'
+
+            from components.java
+
+
+        }
+    }
+
     repositories {
         maven {
+
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/zurden/test-automation-java"
             credentials {
@@ -42,13 +55,5 @@ publishing {
                 password = System.getenv("GITHUB_TOKEN")
             }
         }
-    }
-}
-
-
-task printMessage {
-    doLast {
-        def tkn = System.getenv("MY_USER")
-        println "This is a print ${tkn}"
     }
 }
