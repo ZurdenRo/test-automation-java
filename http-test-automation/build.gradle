@@ -34,8 +34,8 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId = 'com.company.qa'
-            artifactId = 'library'
-            version = '1.1'
+            artifactId = 'java-frame'
+            version = '1.2'
 
             from components.java
         }
@@ -44,8 +44,9 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
+                url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
             credentials {
+
                 username = System.getenv("MY_USER")
                 password = System.getenv("GITHUB_TOKEN")
             }
