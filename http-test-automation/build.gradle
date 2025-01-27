@@ -35,7 +35,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'com.company.qa'
             artifactId = 'java-frame'
-            version = '1.2'
+            version = '1.3'
 
             from components.java
         }
