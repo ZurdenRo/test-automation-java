@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation libs.guava
+    implementation libs.httpclient5
+    implementation libs.jackson.databind
     testImplementation libs.junit.jupiter
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -34,8 +35,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId = 'com.company.qa'
-            artifactId = 'java-frame'
-            version = '1.3'
+            artifactId = 'http-test-automation'
 
             from components.java
         }
