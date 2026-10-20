@@ -23,13 +23,13 @@ import java.util.Map;
 final class HttpTransport implements Closeable {
 
     private final HttpConfig config;
-    private final BodyDeserializer deserializer;
+    private final BodyCodec codec;
     private final CloseableHttpClient client;
     private volatile boolean closed;
 
-    HttpTransport(HttpConfig config, BodyDeserializer deserializer) {
+    HttpTransport(HttpConfig config, BodyCodec codec) {
         this.config = config;
-        this.deserializer = deserializer;
+        this.codec = codec;
         this.client = HttpClients.custom()
                 .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
                         .setMaxConnTotal(config.maxConnections)
@@ -46,35 +46,27 @@ final class HttpTransport implements Closeable {
     }
 
     HttpResponse get(String path) {
-        return get(path, QueryParams.empty(), Headers.empty());
+        return get(HttpRequest.to(path));
     }
 
-    HttpResponse get(String path, QueryParams query) {
-        return get(path, query, Headers.empty());
-    }
-
-    HttpResponse get(String path, Headers headers) {
-        return get(path, QueryParams.empty(), headers);
-    }
-
-    HttpResponse get(String path, QueryParams query, Headers headers) {
-        String url = config.urlFor(path) + queryString(path, query);
+    HttpResponse get(HttpRequest request) {
+        String url = config.urlFor(request.path()) + queryString(request.path(), request.query());
         if (closed) {
             throw new HttpTransportException("GET " + url + " failed: the transport is closed");
         }
-        HttpGet request = newGet(url);
+        HttpGet get = newGet(url);
         try {
-            for (Map.Entry<String, String> header : config.headersFor(headers).pairs()) {
-                request.addHeader(header.getKey(), header.getValue());
+            for (Map.Entry<String, String> header : config.headersFor(request.headers()).pairs()) {
+                get.addHeader(header.getKey(), header.getValue());
             }
             HttpClientContext context = HttpClientContext.create();
-            URI requested = request.getUri();
-            return client.execute(request, context, response -> new HttpResponse(
+            URI requested = get.getUri();
+            return client.execute(get, context, response -> new HttpResponse(
                     response.getCode(),
                     response.getEntity() == null ? "" : EntityUtils.toString(response.getEntity()),
                     lastRedirectOr(requested, context),
                     headersOf(response),
-                    deserializer));
+                    codec));
         } catch (IOException | URISyntaxException e) {
             throw new HttpTransportException("GET " + url + " failed: " + e.getMessage(), e);
         }

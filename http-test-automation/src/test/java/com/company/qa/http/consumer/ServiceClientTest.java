@@ -1,10 +1,9 @@
 package com.company.qa.http.consumer;
 
-import com.company.qa.http.Headers;
+import com.company.qa.http.HttpRequest;
 import com.company.qa.http.HttpResponse;
 import com.company.qa.http.HttpServiceClient;
 import com.company.qa.http.HttpTransportBuilder;
-import com.company.qa.http.QueryParams;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +29,7 @@ class ServiceClientTest {
         }
 
         public HttpResponse findUsers(String name) {
-            return get("/api/v1/users", QueryParams.of("name", name), Headers.of("X-Trace", "t1"));
+            return get(HttpRequest.to("/api/v1/users").query("name", name).header("X-Trace", "t1"));
         }
     }
 

@@ -33,6 +33,13 @@ public final class QueryParams {
         return new QueryParams(copy);
     }
 
+    /** Returns a copy with the parameters of {@code more} after these. */
+    QueryParams and(QueryParams more) {
+        List<Map.Entry<String, String>> copy = new ArrayList<>(pairs);
+        copy.addAll(more.pairs);
+        return new QueryParams(copy);
+    }
+
     boolean isEmpty() {
         return pairs.isEmpty();
     }

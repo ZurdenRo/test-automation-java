@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BodyAsTest {
 
     /** Reads bodies of the form {@code name=Ada}; anything else is rejected, like a JSON parser would. */
-    private static final BodyDeserializer NAME_READER = new BodyDeserializer() {
+    private static final BodyCodec NAME_CODEC = new BodyCodec() {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T read(String body, Class<T> type) throws Exception {
@@ -19,13 +19,18 @@ class BodyAsTest {
             }
             return (T) new User(body.substring("name=".length()));
         }
+
+        @Override
+        public String write(Object model) {
+            return "name=" + ((User) model).name;
+        }
     };
 
     @Test
-    void bodyAsTurnsTheBodyIntoTheRequestedModelUsingTheConsumersDeserializer() throws Exception {
+    void bodyAsTurnsTheBodyIntoTheRequestedModelUsingTheConsumersCodec() throws Exception {
         try (TestServer server = new TestServer().on("/u", ex -> TestServer.respond(ex, 200, "name=Ada")).start();
              HttpTransport transport = new HttpTransportBuilder()
-                     .baseUrl(server.baseUrl()).bodyDeserializer(NAME_READER).build()) {
+                     .baseUrl(server.baseUrl()).bodyCodec(NAME_CODEC).build()) {
 
             User user = transport.get("/u").bodyAs(User.class);
 
@@ -57,10 +62,10 @@ class BodyAsTest {
     }
 
     @Test
-    void anExplicitDeserializerReplacesTheBuiltInOne() throws Exception {
+    void anExplicitCodecReplacesTheBuiltInOne() throws Exception {
         try (TestServer server = new TestServer().on("/u", ex -> TestServer.respond(ex, 200, "name=Ada")).start();
              HttpTransport transport = new HttpTransportBuilder()
-                     .baseUrl(server.baseUrl()).bodyDeserializer(NAME_READER).build()) {
+                     .baseUrl(server.baseUrl()).bodyCodec(NAME_CODEC).build()) {
 
             assertEquals(new User("Ada"), transport.get("/u").bodyAs(User.class));
         }
@@ -86,7 +91,7 @@ class BodyAsTest {
         String html = "<html>" + "x".repeat(500);
         try (TestServer server = new TestServer().on("/u", ex -> TestServer.respond(ex, 404, html)).start();
              HttpTransport transport = new HttpTransportBuilder()
-                     .baseUrl(server.baseUrl()).bodyDeserializer(NAME_READER).build()) {
+                     .baseUrl(server.baseUrl()).bodyCodec(NAME_CODEC).build()) {
 
             HttpResponse response = transport.get("/u");
             HttpTransportException e = assertThrows(HttpTransportException.class, () -> response.bodyAs(User.class));

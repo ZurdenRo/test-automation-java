@@ -16,6 +16,10 @@ _Avoid_: Client, HttpClient
 The scheme, host and optional path prefix a transport is bound to. Requests name only a path relative to it.
 _Avoid_: Host, endpoint, root URL
 
+**Request**:
+What a service client sends: a path relative to the base URL, plus query params, headers and, except for GET and DELETE, a body. Whatever it does not set (default headers, timeouts) comes from the service config; whatever it sets wins.
+_Avoid_: Request options, call
+
 **Service config**:
 A `.properties` resource in the consumer's classpath, named by the consumer, holding one transport's settings. A consumer with several services has several.
 _Avoid_: Settings file, client config
@@ -28,9 +32,9 @@ _Avoid_: Result, reply
 No response was obtained at all: unreachable host, refused connection, timeout. A response with an error status is not one.
 _Avoid_: HTTP error, request error
 
-**Body deserializer**:
-The component that turns a response body into a model object. The library reads JSON by default; a consumer may replace it with its own.
-_Avoid_: Mapper, parser, converter
+**Body codec**:
+The component that turns model objects into request bodies and response bodies back into model objects, with one configuration for both directions. The library uses JSON by default; a consumer may replace it with its own.
+_Avoid_: Body deserializer, mapper, parser, converter
 
 **Query params**:
 The ordered name/value pairs appended to a request path, encoded by the library so callers never build a query string by hand.

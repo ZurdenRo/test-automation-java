@@ -15,7 +15,7 @@ public final class HttpTransportBuilder {
     private String envPrefix;
     private Map<String, String> environment = System.getenv();
     private Headers defaultHeaders = Headers.empty();
-    private BodyDeserializer bodyDeserializer = new JacksonBodyDeserializer();
+    private BodyCodec bodyCodec = new JacksonBodyCodec();
 
     /** The service config: a {@code .properties} file on the classpath, named by the consumer, for this service client. */
     public HttpTransportBuilder configResource(String resource) {
@@ -61,16 +61,16 @@ public final class HttpTransportBuilder {
         return this;
     }
 
-    /** What {@link HttpResponse#bodyAs} uses. Optional: the default reads JSON with Jackson. */
-    public HttpTransportBuilder bodyDeserializer(BodyDeserializer bodyDeserializer) {
-        this.bodyDeserializer = Objects.requireNonNull(bodyDeserializer, "bodyDeserializer");
+    /** Reads response bodies ({@link HttpResponse#bodyAs}) and writes request bodies. Optional: the default is JSON with Jackson. */
+    public HttpTransportBuilder bodyCodec(BodyCodec bodyCodec) {
+        this.bodyCodec = Objects.requireNonNull(bodyCodec, "bodyCodec");
         return this;
     }
 
     HttpTransport build() {
         return new HttpTransport(
                 HttpConfigLoader.load(resource, envPrefix, environment, overrides, defaultHeaders),
-                bodyDeserializer);
+                bodyCodec);
     }
 
     private HttpTransportBuilder set(String key, String value) {

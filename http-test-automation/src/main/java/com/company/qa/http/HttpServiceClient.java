@@ -16,25 +16,18 @@ public abstract class HttpServiceClient implements Closeable {
         this(new HttpTransportBuilder().configResource(configResource));
     }
 
-    /** For a client that needs more than a config file: a deserializer, an explicit base URL, an environment. */
+    /** For a client that needs more than a config file: a body codec, an explicit base URL, an environment. */
     protected HttpServiceClient(HttpTransportBuilder builder) {
         this.transport = builder.build();
     }
 
+    /** Shortcut for a request that sets nothing but its path. */
     protected HttpResponse get(String path) {
-        return transport.get(path);
+        return get(HttpRequest.to(path));
     }
 
-    protected HttpResponse get(String path, QueryParams query) {
-        return transport.get(path, query);
-    }
-
-    protected HttpResponse get(String path, Headers headers) {
-        return transport.get(path, headers);
-    }
-
-    protected HttpResponse get(String path, QueryParams query, Headers headers) {
-        return transport.get(path, query, headers);
+    protected HttpResponse get(HttpRequest request) {
+        return transport.get(request);
     }
 
     /** Closes the connection pool. */

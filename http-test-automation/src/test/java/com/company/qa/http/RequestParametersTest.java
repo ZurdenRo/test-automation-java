@@ -17,8 +17,8 @@ class RequestParametersTest {
         try (TestServer server = echoingServer();
              HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
 
-            HttpResponse response = transport.get("/echo",
-                    QueryParams.of("name", "Jose Pérez").and("q", "a&b=c"));
+            HttpResponse response = transport.get(HttpRequest.to("/echo")
+                    .query("name", "Jose Pérez").query("q", "a&b=c"));
 
             assertEquals("name=Jose Pérez;q=a&b=c", decodedQueryOf(response));
         }
@@ -32,7 +32,7 @@ class RequestParametersTest {
                      .defaultHeaders(Headers.of("Accept", "text/plain").and("X-Env", "staging"))
                      .build()) {
 
-            HttpResponse response = transport.get("/echo", Headers.of("accept", "application/json"));
+            HttpResponse response = transport.get(HttpRequest.to("/echo").header("accept", "application/json"));
 
             assertEquals(List.of("application/json"), response.headers().all("X-Seen-Accept"));
             assertEquals(List.of("staging"), response.headers().all("X-Seen-Env"));
@@ -47,27 +47,58 @@ class RequestParametersTest {
                      .defaultHeaders(Headers.of("X-Token", "default"))
                      .build()) {
 
-            HttpResponse response = transport.get("/echo", Headers.of("X-Token", "t1").and("x-token", "t2"));
+            HttpResponse response = transport.get(HttpRequest.to("/echo")
+                    .header("X-Token", "t1").header("x-token", "t2"));
 
             assertEquals(List.of("t1,t2"), response.headers().all("X-Seen-Token"));
         }
     }
 
     @Test
-    void allFourGetOverloadsReachTheServer() throws Exception {
+    void aRequestCarriesItsQueryAndHeadersToTheServer() throws Exception {
         try (TestServer server = echoingServer();
              HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
 
-            QueryParams query = QueryParams.of("k", "v");
-            Headers headers = Headers.of("X-Token", "t1");
+            HttpResponse response = transport.get(HttpRequest.to("/echo")
+                    .query("name", "Jose Pérez")
+                    .header("X-Token", "t1"));
 
-            assertEquals(200, transport.get("/echo").status());
-            assertEquals("k=v", decodedQueryOf(transport.get("/echo", query)));
-            assertEquals("t1", transport.get("/echo", headers).headers().first("X-Seen-Token").get());
+            assertEquals("name=Jose Pérez", decodedQueryOf(response));
+            assertEquals("t1", response.headers().first("X-Seen-Token").get());
+        }
+    }
 
-            HttpResponse both = transport.get("/echo", query, headers);
-            assertEquals("k=v", decodedQueryOf(both));
-            assertEquals("t1", both.headers().first("X-Seen-Token").get());
+    @Test
+    void prebuiltQueryParamsAndHeadersCombineWithSingleOnesInOrder() throws Exception {
+        try (TestServer server = echoingServer();
+             HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
+
+            HttpResponse response = transport.get(HttpRequest.to("/echo")
+                    .query("a", "1")
+                    .query(QueryParams.of("b", "2").and("c", "3"))
+                    .query("d", "4")
+                    .header("X-Token", "t1")
+                    .headers(Headers.of("x-token", "t2").and("Accept", "text/plain")));
+
+            assertEquals("a=1;b=2;c=3;d=4", decodedQueryOf(response));
+            assertEquals("t1,t2", response.headers().first("X-Seen-Token").get());
+            assertEquals("text/plain", response.headers().first("X-Seen-Accept").get());
+        }
+    }
+
+    @Test
+    void addingToARequestLeavesTheOriginalAsItWasSoItCanBeReused() throws Exception {
+        try (TestServer server = echoingServer();
+             HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
+
+            HttpRequest base = HttpRequest.to("/echo").query("page", "1").header("X-Token", "t1");
+            HttpResponse extended = transport.get(base.query("size", "50").header("X-Token", "t2"));
+            HttpResponse original = transport.get(base);
+
+            assertEquals("page=1;size=50", decodedQueryOf(extended));
+            assertEquals("t1,t2", extended.headers().first("X-Seen-Token").get());
+            assertEquals("page=1", decodedQueryOf(original));
+            assertEquals("t1", original.headers().first("X-Seen-Token").get());
         }
     }
 
