@@ -12,6 +12,7 @@ Consumers run their tests with TestNG. A consumer's UI test extends the library'
 ## Consequences
 
 - A consumer's UI test can extend no other class.
+- TestNG is an `api` dependency, like Playwright: its types are in `BaseUiTest`'s signatures, and a consumer pinning another TestNG version is raised to ours or ours to theirs.
 - Every protected member of `BaseUiTest`, `BasePage` and `BaseComponent` is API we cannot change without breaking classes owned by other teams; keep them small (http's ADR-0003 learned the same).
 - Built for parallel runs from the start: each thread has its own browser and each test method its own browser context, so TestNG `parallel="methods"` needs no consumer changes.
 - The module's own tests use JUnit and run TestNG programmatically to test `BaseUiTest`.

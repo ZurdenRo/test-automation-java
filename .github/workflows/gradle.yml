@@ -22,6 +22,10 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
-    # Builds and runs the tests; the module is not published for now.
+    # The UI tests drive real browsers: install them, and the system libraries they need, at our Playwright version.
+    - name: Install Playwright browsers
+      run: ./gradlew :ui-test-automation:playwright --args="install --with-deps chromium firefox"
+
+    # Builds and runs the tests; the modules are not published for now.
     - name: Build and test
-      run: ./gradlew :http-test-automation:build
+      run: ./gradlew :http-test-automation:build :ui-test-automation:build

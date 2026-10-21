@@ -30,6 +30,13 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+// Runs Playwright's CLI at the version this module depends on, e.g. in CI:
+// ./gradlew :ui-test-automation:playwright --args="install --with-deps chromium firefox"
+tasks.register('playwright', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+}
+
 publishing {
 
     publications {

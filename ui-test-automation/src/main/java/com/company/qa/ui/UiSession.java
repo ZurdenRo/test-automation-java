@@ -5,9 +5,14 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.Tracing;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +44,9 @@ final class UiSession {
         BrowserContext context = browser(config).newContext(new Browser.NewContextOptions()
                 .setViewportSize(config.viewportWidth(), config.viewportHeight()));
         context.setDefaultTimeout(config.timeoutMs());
+        if (config.traceOnFailure()) {
+            context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
+        }
         return new UiSession(config, context);
     }
 
@@ -74,8 +82,53 @@ final class UiSession {
         return create(type, page);
     }
 
-    void close() {
-        context.close();
+    /**
+     * Keeps the failure evidence of a failed test, then closes the context. Evidence that cannot be taken (a
+     * crashed tab) is skipped, so it never hides why the test failed.
+     *
+     * @param testClass  names the evidence directory
+     * @param testMethod names the evidence files; a second failure of the same method gets {@code -2}
+     * @return the evidence files kept, none for a test that passed
+     */
+    List<Path> close(String testClass, String testMethod, boolean failed) {
+        List<Path> evidence = new ArrayList<>();
+        try {
+            if (failed) {
+                Path stem = unusedStem(config.evidenceDir().resolve(testClass), testMethod);
+                List<Page> tabs = context.pages();
+                for (int i = 0; i < tabs.size(); i++) {
+                    Path file = sibling(stem, i == 0 ? ".png" : "-tab" + (i + 1) + ".png");
+                    try {
+                        tabs.get(i).screenshot(new Page.ScreenshotOptions().setPath(file));
+                        evidence.add(file);
+                    } catch (PlaywrightException ignored) {
+                        // The tab is gone; the other evidence still helps.
+                    }
+                }
+                if (config.traceOnFailure()) {
+                    Path trace = sibling(stem, "-trace.zip");
+                    context.tracing().stop(new Tracing.StopOptions().setPath(trace));
+                    evidence.add(trace);
+                }
+            } else if (config.traceOnFailure()) {
+                context.tracing().stop();
+            }
+        } finally {
+            context.close();
+        }
+        return evidence;
+    }
+
+    private static Path unusedStem(Path dir, String testMethod) {
+        Path stem = dir.resolve(testMethod);
+        for (int n = 2; Files.exists(sibling(stem, ".png")); n++) {
+            stem = dir.resolve(testMethod + "-" + n);
+        }
+        return stem;
+    }
+
+    private static Path sibling(Path stem, String suffix) {
+        return stem.resolveSibling(stem.getFileName() + suffix);
     }
 
     /** The thread's browser for these launch settings; a run whose {@code <test>}s vary them has one per kind. */

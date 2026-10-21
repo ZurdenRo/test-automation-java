@@ -1,15 +1,20 @@
 package com.company.qa.ui;
 
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Base of a consumer's UI test. Before each test method it opens a fresh browser context and closes it after;
- * the test gets page objects from {@code open(...)} and never touches the browser page.
+ * Base of a consumer's UI test. Before each test method it opens a fresh browser context; after it, it keeps
+ * failure evidence if the test failed and closes the context. The test gets page objects from {@code open(...)},
+ * {@code to(...)}, {@code openInNewTab(...)} and {@code on(...)}, and never touches the browser page.
  */
 public abstract class BaseUiTest {
 
@@ -24,12 +29,18 @@ public abstract class BaseUiTest {
         session.set(UiSession.start(UiConfigLoader.load(configResource(), System.getenv(), xmlParameters)));
     }
 
+    /** Keeps the failure evidence of a failed test (logged to the TestNG report), then closes the context. */
     @AfterMethod(alwaysRun = true)
-    public void closeBrowserContext() {
+    public void closeBrowserContext(ITestResult result) {
         UiSession current = session.get();
         if (current != null) {
             session.remove();
-            current.close();
+            boolean failed = result.getStatus() == ITestResult.FAILURE;
+            List<Path> evidence = current.close(result.getTestClass().getName(), result.getMethod().getMethodName(),
+                    failed);
+            for (Path file : evidence) {
+                Reporter.log("Failure evidence: " + file.toAbsolutePath());
+            }
         }
     }
 

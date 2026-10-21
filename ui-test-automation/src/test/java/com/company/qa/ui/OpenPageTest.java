@@ -47,6 +47,33 @@ class OpenPageTest {
                 results.failure("opensDashboard").getMessage());
     }
 
+    @Test
+    void aPageObjectWithoutAPageConstructorIsNamed() {
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
+                .run(OpensNoConstructorPage.class);
+
+        assertEquals("NoConstructorPage needs a public constructor taking a Page",
+                results.failure("opensIt").getMessage());
+    }
+
+    public static class NoConstructorPage extends BasePage {
+        NoConstructorPage(Page page) {
+            super(page);
+        }
+
+        @Override
+        protected String path() {
+            return "/x";
+        }
+    }
+
+    public static class OpensNoConstructorPage extends BaseUiTest {
+        @org.testng.annotations.Test
+        public void opensIt() {
+            open(NoConstructorPage.class);
+        }
+    }
+
     public static class DashboardPage extends BasePage {
         public DashboardPage(Page page) {
             super(page);
