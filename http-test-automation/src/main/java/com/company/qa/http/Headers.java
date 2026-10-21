@@ -40,6 +40,15 @@ public final class Headers {
         return new Headers(copy);
     }
 
+    /** Returns a copy with every value of {@code more} added; existing values are kept. */
+    Headers and(Headers more) {
+        Headers result = this;
+        for (Map.Entry<String, String> pair : more.pairs()) {
+            result = result.and(pair.getKey(), pair.getValue());
+        }
+        return result;
+    }
+
     public Optional<String> first(String name) {
         HeaderValues entry = byName.get(key(name));
         return entry == null ? Optional.empty() : Optional.of(entry.values.get(0));

@@ -11,15 +11,15 @@ public final class HttpResponse {
     private final String body;
     private final URI finalUri;
     private final Headers headers;
-    private final BodyDeserializer deserializer;
+    private final BodyCodec codec;
 
     HttpResponse(int status, String body, URI finalUri, Headers headers,
-                 BodyDeserializer deserializer) {
+                 BodyCodec codec) {
         this.status = status;
         this.body = body;
         this.finalUri = finalUri;
         this.headers = headers;
-        this.deserializer = deserializer;
+        this.codec = codec;
     }
 
     public int status() {
@@ -40,13 +40,13 @@ public final class HttpResponse {
     }
 
     /**
-     * Deserializes the body with the service client's {@link BodyDeserializer}.
+     * Deserializes the body with the service client's {@link BodyCodec}.
      *
      * @throws HttpTransportException if the body cannot be read as {@code type}
      */
     public <T> T bodyAs(Class<T> type) {
         try {
-            return deserializer.read(body, type);
+            return codec.read(body, type);
         } catch (Exception e) {
             String shown = body.length() > BODY_EXCERPT ? body.substring(0, BODY_EXCERPT) + "..." : body;
             throw new HttpTransportException("HTTP " + status + " from " + finalUri + ": could not read the body as "

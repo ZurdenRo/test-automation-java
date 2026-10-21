@@ -6,7 +6,7 @@ A dependency published by a library is resolved into every consumer, where Gradl
 
 ## Jackson is bundled on purpose
 
-We first chose to ship no JSON library and make each consumer plug in a `BodyDeserializer`. We reversed that: consumers should not each write the same adapter, so `bodyAs(Type.class)` reads JSON out of the box. The cost is accepted: Jackson is on every consumer's classpath, and a consumer pinning an older Jackson will be raised to ours or ours to theirs. `bodyDeserializer(...)` remains as an optional override (another JSON library, special mapper settings).
+We first chose to ship no JSON library and make each consumer plug in a body deserializer. We reversed that: consumers should not each write the same adapter, so `bodyAs(Type.class)` reads JSON out of the box. The cost is accepted: Jackson is on every consumer's classpath, and a consumer pinning an older Jackson will be raised to ours or ours to theirs. `bodyCodec(...)` remains as an optional override (another JSON library, special mapper settings). It replaced a read-only `bodyDeserializer(...)` before the first release: one `BodyCodec` reads response bodies and writes request bodies, so a consumer configures its JSON once and cannot send it one way and read it another.
 
 ## Consequences
 
