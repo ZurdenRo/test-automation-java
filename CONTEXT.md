@@ -20,6 +20,10 @@ _Avoid_: Host, endpoint, root URL
 What a service client sends: a path relative to the base URL, plus query params, headers and, except for GET and DELETE, a body. Whatever it does not set (default headers, timeouts) comes from the service config; whatever it sets wins.
 _Avoid_: Request options, call
 
+**Request body**:
+What a POST, PUT or PATCH carries: text sent as is, or a model written by the body codec when the request is sent. Its content type is sent unless the request sets its own. GET and DELETE take none.
+_Avoid_: Payload, entity
+
 **Service config**:
 A `.properties` resource in the consumer's classpath, named by the consumer, holding one transport's settings. A consumer with several services has several.
 _Avoid_: Settings file, client config

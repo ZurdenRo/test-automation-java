@@ -11,7 +11,7 @@ We first chose composition: a public interface plus a builder, and the consumer 
 
 ## Consequences
 
-- Every `protected` member of `HttpServiceClient` is API we cannot change without breaking subclasses owned by other teams. Keep that surface to `get(String)`, `get(HttpRequest)`, `close()` and two constructors.
+- Every `protected` member of `HttpServiceClient` is API we cannot change without breaking subclasses owned by other teams. Keep that surface to one `String` shortcut and one `HttpRequest` form per verb (`get`, `post`, `put`, `patch`, `delete`), `close()` and two constructors.
 - A consumer client can extend no other class.
 - There is no public seam to substitute the transport; a consumer test that needs a fake server uses a real local one, as ours do.
 - Supersedes the composition shape (interface + builder) agreed earlier; ADR-0002 still holds, since `HttpServiceClient` exposes no third-party type.
@@ -21,4 +21,4 @@ We first chose composition: a public interface plus a builder, and the consumer 
 The first surface was four `get` overloads: path × optional `QueryParams` × optional `Headers`. Every further per-request setting (a body, a timeout) would double them, and each overload is frozen API. Before the first release they were replaced by one immutable, flat `HttpRequest` (`HttpRequest.to(path).query(...).header(...)`) and a `get(String)` shortcut for the simple case. A new per-request setting is now a method on `HttpRequest`, not a new protected signature.
 
 - Flat, not nested: no intermediate options object in the public API.
-- The verb stays the method name (`get(request)`), so a consumer client reads as HTTP.
+- The verb stays the method name (`get(request)`, `post(request)`), so a consumer client reads as HTTP. The price is that a body on a GET or DELETE is caught at run time, with an `IllegalArgumentException` naming the verb and path, not by the compiler.
