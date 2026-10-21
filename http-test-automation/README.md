@@ -20,8 +20,22 @@ public class UsersClient extends HttpServiceClient {
                 .query("name", name)
                 .header("X-Trace", "t1"));
     }
+
+    public HttpResponse createUser(User user) {
+        return post(HttpRequest.to("/api/v1/users").body(RequestBody.json(user)));
+    }
+
+    public HttpResponse cancelJob(int id) {
+        return post("/jobs/" + id + "/cancel");   // no body
+    }
+
+    public HttpResponse deleteUser(int id) {
+        return delete("/api/v1/users/" + id);
+    }
 }
 ```
+
+`post`, `put` and `patch` take an optional body: `RequestBody.json(model)` is written with the client's body codec and sent as `application/json`; `RequestBody.text(content, contentType)` is sent as is. A `Content-Type` header on the request wins over the body's. `get` and `delete` reject a body.
 
 Create one per suite and close it in teardown (or use try-with-resources): it owns the connection pool.
 
