@@ -8,6 +8,7 @@ import com.microsoft.playwright.Playwright;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,16 +46,27 @@ final class UiSession {
         LAUNCHED.clear();
     }
 
-    <T extends BasePage> T open(Class<T> type) {
-        T pageObject = create(type, page);
-        String path = pageObject.path();
-        if (path == null) {
-            String name = type.getSimpleName();
+    /**
+     * @param parameters the values of the path's named parameters, all of them or none if it has none
+     * @param newTab     open it in a new tab of the context instead of the test's tab
+     */
+    <T extends BasePage> T open(Class<T> type, Map<String, String> parameters, boolean newTab) {
+        Page tab = newTab ? context.newPage() : page;
+        T pageObject = create(type, tab);
+        String name = type.getSimpleName();
+        String template = pageObject.path();
+        if (template == null) {
             throw new IllegalStateException(name + " has no path: reach it from another page, or use on("
                     + name + ".class)");
         }
-        page.navigate(join(config.appUrl(pageObject.app(), type.getSimpleName()), path));
+        String path = PagePath.fill(name, template, parameters);
+        tab.navigate(join(config.appUrl(pageObject.app(), name), path));
         return pageObject;
+    }
+
+    /** The page object for the screen the test's tab shows now, without navigating. */
+    <T extends BasePage> T on(Class<T> type) {
+        return create(type, page);
     }
 
     void close() {
