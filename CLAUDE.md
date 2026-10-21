@@ -14,4 +14,4 @@ The five canonical triage labels, used with their default names. See `docs/agent
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` plus `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Multi-context: `CONTEXT-MAP.md` at the repo root points at one `CONTEXT.md` per module, each with its own `docs/adr/`; root `docs/adr/` holds cross-module decisions. See `docs/agents/domain.md`.
