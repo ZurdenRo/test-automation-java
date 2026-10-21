@@ -1,5 +1,6 @@
 package com.company.qa.ui;
 
+import org.testng.ITestContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
@@ -18,8 +19,9 @@ public abstract class BaseUiTest {
     private final ThreadLocal<UiSession> session = new ThreadLocal<>();
 
     @BeforeMethod(alwaysRun = true)
-    public void startBrowserContext() {
-        session.set(UiSession.start(UiConfigLoader.load(DEFAULT_CONFIG_RESOURCE, System.getenv())));
+    public void startBrowserContext(ITestContext context) {
+        Map<String, String> xmlParameters = context.getCurrentXmlTest().getAllParameters();
+        session.set(UiSession.start(UiConfigLoader.load(configResource(), System.getenv(), xmlParameters)));
     }
 
     @AfterMethod(alwaysRun = true)
@@ -34,6 +36,11 @@ public abstract class BaseUiTest {
     @AfterSuite(alwaysRun = true)
     public void closeBrowsers() {
         UiSession.closeBrowsers();
+    }
+
+    /** The config resource on the classpath; override it for a project whose tests use another. */
+    protected String configResource() {
+        return DEFAULT_CONFIG_RESOURCE;
     }
 
     /** Navigates the test's tab to the page object's path and returns the page object. How a test starts. */

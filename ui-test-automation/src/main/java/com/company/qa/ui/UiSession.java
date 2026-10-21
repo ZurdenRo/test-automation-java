@@ -2,11 +2,13 @@ package com.company.qa.ui;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,7 +36,10 @@ final class UiSession {
     }
 
     static UiSession start(UiConfig config) {
-        return new UiSession(config, browser().newContext());
+        BrowserContext context = browser(config).newContext(new Browser.NewContextOptions()
+                .setViewportSize(config.viewportWidth(), config.viewportHeight()));
+        context.setDefaultTimeout(config.timeoutMs());
+        return new UiSession(config, context);
     }
 
     /** Closes every browser launched by any thread. */
@@ -73,15 +78,33 @@ final class UiSession {
         context.close();
     }
 
-    private static Browser browser() {
+    /** The thread's browser for these launch settings; a run whose {@code <test>}s vary them has one per kind. */
+    private static Browser browser(UiConfig config) {
         Launched launched = BROWSER.get();
         if (launched == null || launched.generation != GENERATION.get()) {
             Playwright playwright = Playwright.create();
             LAUNCHED.add(playwright);
-            launched = new Launched(GENERATION.get(), playwright.chromium().launch());
+            launched = new Launched(GENERATION.get(), playwright);
             BROWSER.set(launched);
         }
-        return launched.browser;
+        String kind = config.browser() + "/" + config.channel() + "/" + config.headless() + "/" + config.slowMoMs();
+        Playwright playwright = launched.playwright;
+        return launched.browsers.computeIfAbsent(kind, k -> type(playwright, config.browser())
+                .launch(new BrowserType.LaunchOptions()
+                        .setChannel(config.channel())
+                        .setHeadless(config.headless())
+                        .setSlowMo(config.slowMoMs())));
+    }
+
+    private static BrowserType type(Playwright playwright, String browser) {
+        switch (browser) {
+            case "firefox":
+                return playwright.firefox();
+            case "webkit":
+                return playwright.webkit();
+            default:
+                return playwright.chromium();
+        }
     }
 
     private static <T extends BasePage> T create(Class<T> type, Page page) {
@@ -104,11 +127,12 @@ final class UiSession {
 
     private static final class Launched {
         final int generation;
-        final Browser browser;
+        final Playwright playwright;
+        final Map<String, Browser> browsers = new HashMap<>();
 
-        Launched(int generation, Browser browser) {
+        Launched(int generation, Playwright playwright) {
             this.generation = generation;
-            this.browser = browser;
+            this.playwright = playwright;
         }
     }
 }
