@@ -14,7 +14,10 @@ dependencies {
     // Both are public API: page objects use Playwright directly (ADR-0001) and UI tests extend a TestNG class (ADR-0002).
     api libs.playwright
     api libs.testng
+    // Logs through SLF4J; the consumer's backend (Logback, Log4j) decides levels and where they go.
+    implementation libs.slf4j.api
     testImplementation libs.junit.jupiter
+    testImplementation libs.logback.classic
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
