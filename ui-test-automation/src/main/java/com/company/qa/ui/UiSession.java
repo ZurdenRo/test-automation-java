@@ -80,8 +80,7 @@ final class UiSession {
             throw new IllegalStateException(name + " has a path but no app: override app() to name the app whose"
                     + " app.<name>.url it lives under");
         }
-        String path = PagePath.fill(name, template, parameters);
-        String url = join(config.appUrl(app, name), path);
+        String url = PagePath.url(name, config.appUrl(app, name), template, parameters);
         LOG.debug("Opening {} at {}{}", name, url, newTab ? " in a new tab" : "");
         tab.navigate(url);
         return pageObject;
@@ -193,11 +192,6 @@ final class UiSession {
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException("Cannot create " + type.getSimpleName(), e);
         }
-    }
-
-    private static String join(String baseUrl, String path) {
-        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        return base + (path.startsWith("/") ? path : "/" + path);
     }
 
     private static final class Launched {

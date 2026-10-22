@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** A page object's path with its named parameters ({@code "/users/{id}"}) filled in. */
+/** A page object's URL: its path, with its named parameters ({@code "/users/{id}"}) filled in, under its app's. */
 final class PagePath {
 
     private static final Pattern PARAMETER = Pattern.compile("\\{([^}/]+)}");
@@ -16,8 +16,18 @@ final class PagePath {
     private PagePath() {
     }
 
-    /** @param pageName for the messages; every parameter must be given, and every value given must be used */
-    static String fill(String pageName, String template, Map<String, String> values) {
+    /**
+     * @param pageName for the messages
+     * @param baseUrl  the app's URL; a path of its own ({@code https://host/shop}) is kept
+     * @param values   every parameter of the template, and none it lacks; none for a template without any
+     */
+    static String url(String pageName, String baseUrl, String template, Map<String, String> values) {
+        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        String path = fill(pageName, template, values);
+        return base + (path.startsWith("/") ? path : "/" + path);
+    }
+
+    private static String fill(String pageName, String template, Map<String, String> values) {
         Set<String> names = new LinkedHashSet<>();
         Matcher matcher = PARAMETER.matcher(template);
         while (matcher.find()) {
