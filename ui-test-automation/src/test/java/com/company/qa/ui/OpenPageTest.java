@@ -31,15 +31,15 @@ class OpenPageTest {
     }
 
     @Test
-    void openNavigatesToThePageObjectsPathOnTheDefaultApp() {
-        ConsumerRun.in(classpathDir).config("base.url", site.url())
+    void openNavigatesToThePageObjectsPathOnItsApp() {
+        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .run(OpensLoginPageTest.class)
                 .assertAllPassed();
     }
 
     @Test
     void openingAPageWithoutAPathSaysHowToReachIt() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .run(OpensDashboardPageTest.class);
 
         assertEquals(List.of("opensDashboard"), results.failed());
@@ -49,14 +49,41 @@ class OpenPageTest {
 
     @Test
     void aPageObjectWithoutAPageConstructorIsNamed() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .run(OpensNoConstructorPageTest.class);
 
         assertEquals("NoConstructorPage needs a public constructor taking a Page",
                 results.failure("opensIt").getMessage());
     }
 
-    public static class NoConstructorPage extends BasePage {
+    @Test
+    void openingAPageWithAPathButNoAppSaysToNameIt() {
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+                .run(OpensAppLessPageTest.class);
+
+        assertEquals("AppLessPage has a path but no app: override app() to name the app whose"
+                + " app.<name>.url it lives under", results.failure("opensIt").getMessage());
+    }
+
+    public static class AppLessPage extends BasePage {
+        public AppLessPage(Page page) {
+            super(page);
+        }
+
+        @Override
+        protected String path() {
+            return "/somewhere";
+        }
+    }
+
+    public static class OpensAppLessPageTest extends BaseUiTest {
+        @org.testng.annotations.Test
+        public void opensIt() {
+            open(AppLessPage.class);
+        }
+    }
+
+    public static class NoConstructorPage extends ShopPage {
         NoConstructorPage(Page page) {
             super(page);
         }
@@ -74,7 +101,7 @@ class OpenPageTest {
         }
     }
 
-    public static class DashboardPage extends BasePage {
+    public static class DashboardPage extends ShopPage {
         public DashboardPage(Page page) {
             super(page);
         }
@@ -87,7 +114,7 @@ class OpenPageTest {
         }
     }
 
-    public static class LoginPage extends BasePage {
+    public static class LoginPage extends ShopPage {
         public LoginPage(Page page) {
             super(page);
         }

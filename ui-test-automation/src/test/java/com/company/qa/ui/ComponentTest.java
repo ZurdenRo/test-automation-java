@@ -37,7 +37,7 @@ class ComponentTest {
 
     @Test
     void aComponentActsOnlyWithinItsRoot() {
-        ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .run(ClosesTheSecondOrderTest.class)
                 .assertAllPassed();
     }
@@ -56,7 +56,7 @@ class ComponentTest {
         }
     }
 
-    public static class OrdersPage extends BasePage {
+    public static class OrdersPage extends ShopPage {
         public OrdersPage(Page page) {
             super(page);
         }

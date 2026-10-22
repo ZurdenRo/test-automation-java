@@ -33,7 +33,7 @@ class SettingsTest {
 
     @Test
     void theViewportComesFromTheConfig() {
-        ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .config("viewport.width", "800").config("viewport.height", "600")
                 .run(ChecksViewportTest.class)
                 .assertAllPassed();
@@ -41,7 +41,7 @@ class SettingsTest {
 
     @Test
     void theTimeoutBoundsHowLongAnActionWaits() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .config("timeout.ms", "300")
                 .run(ClicksWhatIsNotThereTest.class);
 
@@ -51,7 +51,7 @@ class SettingsTest {
 
     @Test
     void eachXmlTestRunsInTheBrowserItsParametersName() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .xmlTest("on chromium", Map.of("browser", "chromium"))
                 .xmlTest("on firefox", Map.of("browser", "firefox"))
                 .run(ChecksBrowserTest.class)
@@ -63,12 +63,12 @@ class SettingsTest {
     @Test
     void aTestCanNameItsOwnConfigResource() {
         ConsumerRun.in(classpathDir)
-                .resource("shop.properties", "base.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
+                .resource("shop.properties", "app.shop.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
                 .run(UsesShopConfigTest.class)
                 .assertAllPassed();
     }
 
-    public static class ProbePage extends BasePage {
+    public static class ProbePage extends ShopPage {
         public ProbePage(Page page) {
             super(page);
         }

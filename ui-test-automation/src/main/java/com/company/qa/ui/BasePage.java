@@ -30,7 +30,11 @@ public abstract class BasePage {
         return null;
     }
 
-    /** The named app this page belongs to ({@code app.<name>.url}); null, the default, for the default app. */
+    /**
+     * The app this page lives in: its base URL is {@code app.<name>.url}. Every page with a {@link #path()} must
+     * name one; a page without a path never navigates, so it needs none. A consumer whose pages share an app
+     * overrides it once, in its own base page.
+     */
     protected String app() {
         return null;
     }

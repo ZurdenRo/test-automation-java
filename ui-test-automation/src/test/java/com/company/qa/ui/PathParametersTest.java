@@ -59,10 +59,10 @@ class PathParametersTest {
     }
 
     private ConsumerRun.Results run(Class<?> test) {
-        return ConsumerRun.in(classpathDir).config("base.url", site.url()).run(test);
+        return ConsumerRun.in(classpathDir).config("app.shop.url", site.url()).run(test);
     }
 
-    public static class OrderPage extends BasePage {
+    public static class OrderPage extends ShopPage {
         public OrderPage(Page page) {
             super(page);
         }

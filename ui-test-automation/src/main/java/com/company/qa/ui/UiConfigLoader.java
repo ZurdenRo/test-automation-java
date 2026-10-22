@@ -19,7 +19,6 @@ import java.util.Set;
  */
 final class UiConfigLoader {
 
-    static final String BASE_URL = "base.url";
     static final String BROWSER = "browser";
     static final String CHANNEL = "channel";
     static final String HEADLESS = "headless";
@@ -64,9 +63,9 @@ final class UiConfigLoader {
                 "on-failure".equals(loader.oneOf(TRACE, TRACE_MODES, "off", " or ")));
     }
 
-    /** The URL of the default app (null name) or of a named one, for the page that needs it. */
+    /** The base URL of the named app ({@code app.<name>.url}), for the page that needs it. */
     String appUrl(String app, String pageName) {
-        String key = app == null ? BASE_URL : "app." + app + ".url";
+        String key = "app." + app + ".url";
         return find(key).map(s -> s.value).orElseThrow(() -> new UiConfigException("Missing '" + key + "' for "
                 + pageName + " (blank values count as missing): looked in " + places(key)));
     }

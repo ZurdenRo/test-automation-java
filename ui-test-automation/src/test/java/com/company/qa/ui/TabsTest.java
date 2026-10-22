@@ -43,7 +43,7 @@ class TabsTest {
 
     private ConsumerRun.Results run(Class<?> test) {
         return ConsumerRun.in(classpathDir)
-                .config("base.url", appA.url())
+                .config("app.a.url", appA.url())
                 .config("app.billing.url", appB.url())
                 .run(test);
     }
@@ -51,6 +51,11 @@ class TabsTest {
     public static class HomePage extends BasePage {
         public HomePage(Page page) {
             super(page);
+        }
+
+        @Override
+        protected String app() {
+            return "a";
         }
 
         @Override

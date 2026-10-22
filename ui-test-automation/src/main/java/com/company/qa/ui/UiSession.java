@@ -72,8 +72,13 @@ final class UiSession {
             throw new IllegalStateException(name + " has no path: reach it from another page, or use on("
                     + name + ".class)");
         }
+        String app = pageObject.app();
+        if (app == null) {
+            throw new IllegalStateException(name + " has a path but no app: override app() to name the app whose"
+                    + " app.<name>.url it lives under");
+        }
         String path = PagePath.fill(name, template, parameters);
-        tab.navigate(join(config.appUrl(pageObject.app(), name), path));
+        tab.navigate(join(config.appUrl(app, name), path));
         return pageObject;
     }
 

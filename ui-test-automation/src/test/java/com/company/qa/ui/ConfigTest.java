@@ -30,7 +30,7 @@ class ConfigTest {
 
     @Test
     void defaultsApplyWhenNoSourceSetsAValue() throws Exception {
-        UiConfig config = load("base.url=http://app\n", Map.of(), Map.of());
+        UiConfig config = load("", Map.of(), Map.of());
 
         assertEquals("chromium", config.browser());
         assertNull(config.channel());
@@ -86,10 +86,10 @@ class ConfigTest {
 
     @Test
     void xmlParametersForOtherSettingsAreIgnored() throws Exception {
-        UiConfig config = load("timeout.ms=500\n", Map.of(), Map.of("timeout.ms", "900", "base.url", "http://xml"));
+        UiConfig config = load("timeout.ms=500\n", Map.of(), Map.of("timeout.ms", "900", "app.shop.url", "http://xml"));
 
         assertEquals(500, config.timeoutMs());
-        assertThrows(UiConfigException.class, () -> config.appUrl(null, "HomePage"));
+        assertThrows(UiConfigException.class, () -> config.appUrl("shop", "HomePage"));
     }
 
     @Test

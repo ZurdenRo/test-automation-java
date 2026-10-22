@@ -1,11 +1,25 @@
 # ui-test-automation
 
-Drive a web app from TestNG tests through page objects, on [Playwright](https://playwright.dev/java/). You write a **page object** per screen and a **component** per repeating part; tests call their methods and never touch the browser page. Playwright is yours to use inside them.
+Drive web apps from TestNG tests through page objects, on [Playwright](https://playwright.dev/java/). You write a **page object** per screen and a **component** per repeating part; tests call their methods and never touch the browser page. Playwright is yours to use inside them.
 
 ## A page object
 
+Every page with a path names the app it lives in. Pages of the same app share it through a base of your own:
+
 ```java
-public class LoginPage extends BasePage {
+public abstract class ShopPage extends BasePage {
+
+    protected ShopPage(Page page) {
+        super(page);
+    }
+
+    @Override
+    protected String app() {
+        return "shop";                        // its base URL is app.shop.url
+    }
+}
+
+public class LoginPage extends ShopPage {
 
     public LoginPage(Page page) {
         super(page);                          // nothing else here: the library creates page objects to read their path
@@ -25,7 +39,7 @@ public class LoginPage extends BasePage {
 }
 ```
 
-A page reached only from another one (a dashboard after login) has no `path()`. A path can have named parameters: `"/users/{id}/orders/{orderId}"`.
+A page reached only from another one (a dashboard after login) has no `path()`, and then needs no `app()` either: it never navigates. A path can have named parameters: `"/users/{id}/orders/{orderId}"`.
 
 ## A component
 
@@ -82,37 +96,29 @@ Each test method gets a fresh browser context (cookies, storage, tabs), so tests
 - **Return `Locator` for what the test asserts**, and assert with Playwright's `assertThat`: it retries until the page settles. A value read once (`textContent()`) makes a test flaky while the page loads. Return a value when it is already stable, like an id used in a later step.
 - **What a page object returns is yours.** If where an action lands depends on the user, return nothing and let the test say where it expects to be with `on(...)`.
 
-## Several apps
+## Apps
 
-Each page object belongs to an app; the default one is `base.url`. Name others in the config and point the page at one:
+Each app has a name and a base URL in the config; each page object with a path names its app with `app()`:
 
 ```properties
-base.url=https://shop.example.com
+app.shop.url=https://shop.example.com
 app.billing.url=https://billing.example.com
 ```
 
-```java
-@Override
-protected String app() {
-    return "billing";
-}
-```
-
-A test then moves between apps by opening their pages, in one tab or in several. Since hosts live only in the config, switching environments moves them all.
+A test moves between apps by opening their pages, in one tab or in several. Since hosts live only in the config, switching environments moves them all. Opening a page with a path but no app fails, naming the page.
 
 ## Configuration
 
 Settings live in `ui-test.properties` on the test classpath (override `configResource()` for another name). For each setting, the first value found wins:
 
 1. a `<parameter>` of the running `<test>` in `testng.xml` (only `browser`, `channel`, `headless`, `viewport.width`, `viewport.height`)
-2. an environment variable: `QA_UI_` and the key in capitals with `_` for `.`, such as `QA_UI_HEADLESS` or `QA_UI_APP_BILLING_URL`
+2. an environment variable: `QA_UI_` and the key in capitals with `_` for `.`, such as `QA_UI_HEADLESS` or `QA_UI_APP_SHOP_URL`
 3. the config resource
 4. the default
 
 | Key | Default | |
 |---|---|---|
-| `base.url` | | The default app; needed only when a test opens one of its pages. |
-| `app.<name>.url` | | A named app. |
+| `app.<name>.url` | | The base URL of an app; needed only when a test opens one of its pages. |
 | `browser` | `chromium` | `chromium`, `firefox` or `webkit` (Safari's engine). |
 | `channel` | | `chrome` or `msedge`: the browser installed on the machine instead of Playwright's. |
 | `headless` | `true` | |

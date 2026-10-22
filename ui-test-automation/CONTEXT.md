@@ -29,8 +29,8 @@ The isolated browser session each test method gets, fresh: its own cookies, stor
 _Avoid_: Session, profile
 
 **App**:
-One web application under test, with its own base URL. A consumer has a default app and may name others; each page object belongs to one app, so a test can move between apps without naming a host.
-_Avoid_: Host, site, domain
+One web application under test, with a name and its own base URL. Every page object that can be opened names its app, so a test can move between apps without naming a host. There is no default app.
+_Avoid_: Host, site, domain, base URL (alone)
 
 **Path**:
 Where a page object lives within its app, relative to the app's base URL, possibly with named parameters (`/users/{id}`). It maps the app's screens for navigation; tests do not assert on it.

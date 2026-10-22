@@ -35,7 +35,7 @@ class AppsTest {
     @Test
     void aTestMovesBetweenAppsInOneTabByOpeningTheirPages() {
         ConsumerRun.in(classpathDir)
-                .config("base.url", appA.url())
+                .config("app.a.url", appA.url())
                 .config("app.billing.url", appB.url())
                 .run(GoesFromAToBAndBackTest.class)
                 .assertAllPassed();
@@ -44,7 +44,7 @@ class AppsTest {
     @Test
     void aPageOfAnAppWithoutAUrlNamesTheSettingToAdd() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
-                .config("base.url", appA.url())
+                .config("app.a.url", appA.url())
                 .run(OpensInvoiceTest.class);
 
         assertEquals("Missing 'app.billing.url' for InvoicePage (blank values count as missing): looked in"
@@ -55,6 +55,11 @@ class AppsTest {
     public static class HomePage extends BasePage {
         public HomePage(Page page) {
             super(page);
+        }
+
+        @Override
+        protected String app() {
+            return "a";
         }
 
         @Override

@@ -30,7 +30,7 @@ final class UiConfig {
         this.traceOnFailure = traceOnFailure;
     }
 
-    /** Resolved when a page needs it, so a run that never opens a page of an app needs no URL for it. */
+    /** The named app's base URL, resolved when a page needs it: a run that never opens its pages needs none. */
     String appUrl(String app, String pageName) {
         return loader.appUrl(app, pageName);
     }

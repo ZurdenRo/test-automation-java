@@ -62,7 +62,7 @@ class FailureEvidenceTest {
     }
 
     private void run(String trace, Class<?> test) {
-        ConsumerRun.in(classpathDir).config("base.url", site.url())
+        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
                 .config("evidence.dir", evidenceDir.toString().replace('\\', '/'))
                 .config("trace", trace)
                 .run(test);
@@ -77,7 +77,7 @@ class FailureEvidenceTest {
         }
     }
 
-    public static class AnyPage extends BasePage {
+    public static class AnyPage extends ShopPage {
         public AnyPage(Page page) {
             super(page);
         }
