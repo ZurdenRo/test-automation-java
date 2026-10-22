@@ -52,7 +52,7 @@ Create one per suite and close it in teardown (or use try-with-resources): it ow
 
 ## Configuration
 
-Settings come from the service config, environment variables and `HttpTransportBuilder`; a value given to the builder beats an environment variable, which beats the service config, which beats the default. Pass a builder to the constructor for anything beyond the config file:
+Settings come from the service config and `HttpTransportBuilder`; a value given to the builder beats the service config, which beats the default. Environment variables are not read for settings: they are for secrets only (see `docs/adr/0001` at the repository root). Pass a builder to the constructor for anything beyond the config file:
 
 ```java
 super(new HttpTransportBuilder()

@@ -17,7 +17,7 @@ public abstract class HttpServiceClient implements Closeable {
         this(new HttpTransportBuilder().configResource(configResource));
     }
 
-    /** For a client that needs more than a config file: a body codec, an explicit base URL, an environment. */
+    /** For a client that needs more than a config file: a body codec, an explicit base URL. */
     protected HttpServiceClient(HttpTransportBuilder builder) {
         this.transport = builder.build();
     }

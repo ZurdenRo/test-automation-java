@@ -9,7 +9,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +34,7 @@ class ConfigTest {
             resource("payments.properties", "base.url=" + server.baseUrl() + "\nheader.X-Env=staging\n");
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties").environment(Map.of()).build()) {
+                    .configResource("payments.properties").build()) {
                 HttpResponse response = transport.get("/who");
 
                 assertEquals("payments", response.body());
@@ -50,56 +49,23 @@ class ConfigTest {
             resource("payments.properties", "base.url=" + server.baseUrl() + "\nheader.X-Env=staging\n");
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties").environment(Map.of())
+                    .configResource("payments.properties")
                     .defaultHeaders(Headers.of("x-env", "prod")).build()) {
                 assertEquals("prod", transport.get("/who").headers().first("X-Seen-Env").get());
             }
         }
     }
 
-    @Test
-    void environmentBeatsTheFileAndTheBuilderBeatsTheEnvironment() throws Exception {
-        try (TestServer server = okServer("real")) {
-            resource("payments.properties", "base.url=" + DEAD_URL + "\n");
-            Map<String, String> env = Map.of("QA_HTTP_PAYMENTS_BASE_URL", server.baseUrl());
 
-            try (HttpTransport fromEnv = new HttpTransportBuilder()
-                    .configResource("payments.properties").environment(env).build()) {
-                assertEquals("real", fromEnv.get("/who").body());
-            }
 
-            Map<String, String> wrongEnv = Map.of("QA_HTTP_PAYMENTS_BASE_URL", DEAD_URL);
-            try (HttpTransport fromBuilder = new HttpTransportBuilder()
-                    .configResource("payments.properties").environment(wrongEnv)
-                    .baseUrl(server.baseUrl()).build()) {
-                assertEquals("real", fromBuilder.get("/who").body());
-            }
-        }
-    }
 
     @Test
-    void twoServicesInOneProjectDoNotShareEnvironmentVariables() throws Exception {
-        try (TestServer payments = okServer("payments"); TestServer users = okServer("users")) {
-            resource("payments.properties", "base.url=" + DEAD_URL + "\n");
-            resource("users.properties", "base.url=" + users.baseUrl() + "\n");
-            Map<String, String> env = Map.of("QA_HTTP_PAYMENTS_BASE_URL", payments.baseUrl());
-
-            try (HttpTransport p = new HttpTransportBuilder().configResource("payments.properties").environment(env).build();
-                 HttpTransport u = new HttpTransportBuilder().configResource("users.properties").environment(env).build()) {
-                assertEquals("payments", p.get("/who").body());
-                assertEquals("users", u.get("/who").body());
-            }
-        }
-    }
-
-    @Test
-    void theEnvironmentPrefixCanBeSetExplicitly() throws Exception {
+    void theBuilderBeatsTheFile() throws Exception {
         try (TestServer server = okServer("real")) {
             resource("payments.properties", "base.url=" + DEAD_URL + "\n");
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties").envPrefix("MY_APP_")
-                    .environment(Map.of("MY_APP_BASE_URL", server.baseUrl())).build()) {
+                    .configResource("payments.properties").baseUrl(server.baseUrl()).build()) {
                 assertEquals("real", transport.get("/who").body());
             }
         }
@@ -115,7 +81,7 @@ class ConfigTest {
             resource("svc.properties", "base.url=" + server.baseUrl() + "\nfollow.redirects=false\n");
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("svc.properties").environment(Map.of()).build()) {
+                    .configResource("svc.properties").build()) {
                 assertEquals(302, transport.get("/old").status());
             }
         }
@@ -124,7 +90,7 @@ class ConfigTest {
     @Test
     void missingResourceFailsAtBuildNamingTheResource() {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("absent.properties").environment(Map.of()).build());
+                new HttpTransportBuilder().configResource("absent.properties").build());
 
         assertTrue(e.getMessage().contains("absent.properties"), e.getMessage());
     }
@@ -134,17 +100,16 @@ class ConfigTest {
         resource("payments.properties", "follow.redirects=true\n");
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").environment(Map.of()).build());
+                new HttpTransportBuilder().configResource("payments.properties").build());
 
-        assertTrue(e.getMessage().contains("base.url"), e.getMessage());
-        assertTrue(e.getMessage().contains("QA_HTTP_PAYMENTS_BASE_URL"), e.getMessage());
-        assertTrue(e.getMessage().contains("payments.properties"), e.getMessage());
+        assertEquals("Missing 'base.url' (blank values count as missing): looked in the builder,"
+                + " service config 'payments.properties'", e.getMessage());
     }
 
     @Test
     void missingBaseUrlFailsAtBuildEvenWithNoConfigResourceAtAll() {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().environment(Map.of()).build());
+                new HttpTransportBuilder().build());
 
         assertTrue(e.getMessage().contains("base.url"), e.getMessage());
     }
@@ -154,29 +119,17 @@ class ConfigTest {
         resource("payments.properties", "base.url=   \n");
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").environment(Map.of()).build());
+                new HttpTransportBuilder().configResource("payments.properties").build());
 
         assertTrue(e.getMessage().contains("base.url"), e.getMessage());
         assertTrue(e.getMessage().contains("payments.properties"), e.getMessage());
     }
 
-    @Test
-    void blankEnvironmentVariableDoesNotHideTheValueInTheFile() throws Exception {
-        try (TestServer server = okServer("from-file")) {
-            resource("payments.properties", "base.url=" + server.baseUrl() + "\n");
-
-            try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties")
-                    .environment(Map.of("QA_HTTP_PAYMENTS_BASE_URL", "")).build()) {
-                assertEquals("from-file", transport.get("/who").body());
-            }
-        }
-    }
 
     @Test
     void blankBaseUrlGivenToTheBuilderFailsAtBuildWithOurError() {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().baseUrl(" ").environment(Map.of()).build());
+                new HttpTransportBuilder().baseUrl(" ").build());
 
         assertTrue(e.getMessage().contains("base.url"), e.getMessage());
     }
@@ -186,7 +139,7 @@ class ConfigTest {
         resource("payments.properties", "base.url=" + DEAD_URL + "\nconnect.timeout.ms=soon\n");
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").environment(Map.of()).build());
+                new HttpTransportBuilder().configResource("payments.properties").build());
 
         assertTrue(e.getMessage().contains("connect.timeout.ms"), e.getMessage());
         assertTrue(e.getMessage().contains("soon"), e.getMessage());
