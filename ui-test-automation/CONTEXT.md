@@ -36,6 +36,10 @@ _Avoid_: Host, site, domain, base URL (alone)
 One deployment of the apps under test (QA, staging), described by its own config file. A suite runs against one environment; QA is the default.
 _Avoid_: Stage, profile, target
 
+**Secret**:
+A user, password or key a test needs. It lives only in an environment variable; the environment's config file holds the variable's name, never the value, and a test asks for the secret by a name that is the same in every environment.
+_Avoid_: Credential, sensitive setting
+
 **Path**:
 Where a page object lives within its app, relative to the app's base URL, possibly with named parameters (`/users/{id}`). It maps the app's screens for navigation; tests do not assert on it.
 _Avoid_: URL, route, endpoint

@@ -35,6 +35,11 @@ final class UiConfig {
         return loader.appUrl(app, pageName);
     }
 
+    /** A secret by its name in {@code secret.<name>}, read from the environment variable the file names. */
+    String secret(String name) {
+        return loader.secret(name);
+    }
+
     /** chromium, firefox or webkit. */
     String browser() {
         return browser;

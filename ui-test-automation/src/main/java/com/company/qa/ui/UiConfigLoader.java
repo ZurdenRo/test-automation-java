@@ -38,11 +38,14 @@ final class UiConfigLoader {
 
     private final String resource;
     private final Map<String, String> xmlParameters;
+    private final Map<String, String> env;
     private final Properties file;
 
-    private UiConfigLoader(String resource, Map<String, String> xmlParameters, Properties file) {
+    private UiConfigLoader(String resource, Map<String, String> xmlParameters, Map<String, String> env,
+                           Properties file) {
         this.resource = resource;
         this.xmlParameters = xmlParameters;
+        this.env = env;
         this.file = file;
     }
 
@@ -51,11 +54,16 @@ final class UiConfigLoader {
      *                      {@code ui.config} among them names the config resource of the suite's environment
      */
     static UiConfig load(Map<String, String> xmlParameters) {
+        return load(xmlParameters, System.getenv());
+    }
+
+    /** @param env where secrets are read from, and nothing else */
+    static UiConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
         String named = xmlParameters.get(CONFIG);
         String resource = isPresent(named) ? named.trim() : DEFAULT_CONFIG_RESOURCE;
         String origin = isPresent(named) ? "from <parameter> " + CONFIG
                 : "the default; name another with <parameter> " + CONFIG;
-        UiConfigLoader loader = new UiConfigLoader(resource, xmlParameters, read(resource, origin));
+        UiConfigLoader loader = new UiConfigLoader(resource, xmlParameters, env, read(resource, origin));
         return new UiConfig(loader,
                 loader.oneOf(BROWSER, BROWSERS, "chromium", " or "),
                 loader.oneOf(CHANNEL, CHANNELS, null, " or "),
@@ -73,6 +81,25 @@ final class UiConfigLoader {
         String key = "app." + app + ".url";
         return find(key).map(s -> s.value).orElseThrow(() -> new UiConfigException("Missing '" + key + "' for "
                 + pageName + " in " + resource + " (blank values count as missing)"));
+    }
+
+    /**
+     * A secret, read from the environment variable that {@code secret.<name>} names in the environment's file, so a
+     * test asks for the same name in every environment. The value never appears in a message.
+     */
+    String secret(String name) {
+        String key = "secret." + name;
+        String variable = file.getProperty(key);
+        if (!isPresent(variable)) {
+            throw new UiConfigException("Missing '" + key + "' in " + resource + ": it names the environment"
+                    + " variable that holds secret '" + name + "'");
+        }
+        String value = env.get(variable.trim());
+        if (!isPresent(value)) {
+            throw new UiConfigException("Secret '" + name + "' needs environment variable " + variable.trim()
+                    + ", which is not set (blank values count as missing; " + resource + " names it)");
+        }
+        return value;
     }
 
     private Optional<Setting> find(String key) {

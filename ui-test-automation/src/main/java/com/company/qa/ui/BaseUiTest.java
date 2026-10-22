@@ -47,6 +47,15 @@ public abstract class BaseUiTest {
         UiSession.closeBrowsers();
     }
 
+    /**
+     * A secret (a user, a password, a key) by name: {@code secret("admin.password")} reads the environment variable
+     * that {@code secret.admin.password} names in the environment's config file, so the test is the same in every
+     * environment. Pass it to the page object; never log it.
+     */
+    protected String secret(String name) {
+        return session.get().secret(name);
+    }
+
     /** Navigates the test's tab to the page object's path and returns the page object. How a test starts. */
     protected <T extends BasePage> T open(Class<T> type) {
         return session.get().open(type, Map.of(), false);

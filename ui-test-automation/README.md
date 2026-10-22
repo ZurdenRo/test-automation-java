@@ -149,6 +149,34 @@ The same suite in two browsers in one run:
 </suite>
 ```
 
+## Secrets
+
+Users, passwords and keys live in environment variables, never in a `.properties` file. Each environment's file names the variable that holds each secret, and the test asks for the secret by that name, the same in every environment:
+
+```properties
+# ui-test-qa.properties
+secret.admin.user=SHOP_QA_ADMIN_USER
+secret.admin.password=SHOP_QA_ADMIN_PASSWORD
+```
+
+```properties
+# ui-test-dev.properties
+secret.admin.user=SHOP_DEV_ADMIN_USER
+secret.admin.password=SHOP_DEV_ADMIN_PASSWORD
+```
+
+```java
+open(LoginPage.class).loginAs(secret("admin.user"), secret("admin.password"));
+```
+
+A missing `secret.<name>` key or an unset variable fails the test, naming the key or the variable and never the value. Locally, export the variables (or set them in the IDE's run configuration); on CI, map them from the CI's secret store:
+
+```yaml
+env:
+  SHOP_QA_ADMIN_USER: ${{ secrets.SHOP_QA_ADMIN_USER }}
+  SHOP_QA_ADMIN_PASSWORD: ${{ secrets.SHOP_QA_ADMIN_PASSWORD }}
+```
+
 ## Failure evidence
 
 When a test fails, the library saves a screenshot of each tab, and the trace if `trace=on-failure`, to `<evidence.dir>/<test class>/<method>.png` (`-tab2.png`, `-trace.zip`). The paths go to the TestNG report. Open a trace with `npx playwright show-trace <file>` or at trace.playwright.dev.

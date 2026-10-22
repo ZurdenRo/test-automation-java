@@ -82,6 +82,10 @@ final class UiSession {
         return pageObject;
     }
 
+    String secret(String name) {
+        return config.secret(name);
+    }
+
     /** The page object for the screen the test's tab shows now, without navigating. */
     <T extends BasePage> T on(Class<T> type) {
         return create(type, page);
