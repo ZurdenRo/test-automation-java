@@ -10,5 +10,5 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }
 
-rootProject.name = 'framework-automation'
-include('http-test-automation', 'ui-test-automation', 'performance-test-automation')
+rootProject.name = 'personal-framework-automation'
+include('http-test-automation', 'ui-test-automation', 'mobile-test-automation')

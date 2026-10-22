@@ -13,6 +13,8 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -24,6 +26,8 @@ import java.util.Map;
 
 /** Executes requests against one base URL over a connection pool. The only class that talks to Apache HttpClient. */
 final class HttpTransport implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HttpTransport.class);
 
     private final HttpConfig config;
     private final BodyCodec codec;
@@ -98,12 +102,16 @@ final class HttpTransport implements Closeable {
             }
             HttpClientContext context = HttpClientContext.create();
             URI requested = message.getUri();
-            return client.execute(message, context, response -> new HttpResponse(
-                    response.getCode(),
-                    response.getEntity() == null ? "" : EntityUtils.toString(response.getEntity()),
+            long start = System.nanoTime();
+            HttpResponse response = client.execute(message, context, received -> new HttpResponse(
+                    received.getCode(),
+                    received.getEntity() == null ? "" : EntityUtils.toString(received.getEntity()),
                     lastRedirectOr(requested, context),
-                    headersOf(response),
+                    headersOf(received),
                     codec));
+            LOG.debug("{} {} -> {} in {} ms", method, withoutQueryValues(url), response.status(),
+                    (System.nanoTime() - start) / 1_000_000);
+            return response;
         } catch (IOException | URISyntaxException e) {
             throw new HttpTransportException(method + " " + url + " failed: " + e.getMessage(), e);
         }
@@ -125,6 +133,21 @@ final class HttpTransport implements Closeable {
         } catch (IllegalArgumentException e) {
             throw new HttpTransportException("Invalid URL for " + method + " " + url + ": " + e.getMessage(), e);
         }
+    }
+
+    /** For the log: query values may be keys or tokens, so only their names are kept ({@code ?page=…&key=…}). */
+    static String withoutQueryValues(String url) {
+        int query = url.indexOf('?');
+        if (query < 0) {
+            return url;
+        }
+        StringBuilder logged = new StringBuilder(url.substring(0, query + 1));
+        String[] pairs = url.substring(query + 1).split("&");
+        for (int i = 0; i < pairs.length; i++) {
+            int equals = pairs[i].indexOf('=');
+            logged.append(i == 0 ? "" : "&").append(equals < 0 ? pairs[i] : pairs[i].substring(0, equals) + "=…");
+        }
+        return logged.toString();
     }
 
     private static String queryString(String path, QueryParams query) {

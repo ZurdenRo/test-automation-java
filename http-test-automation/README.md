@@ -78,3 +78,19 @@ super(new HttpTransportBuilder()
         .defaultHeaders(Headers.of("Accept", "application/json"))
         .bodyCodec(myCodec));               // optional: JSON with Jackson by default
 ```
+
+## Logging
+
+The library logs through SLF4J under `com.company.qa.http`; add a backend to see the logs, such as `ch.qos.logback:logback-classic` as a test dependency. Without one, SLF4J prints a single warning and the logs are dropped.
+
+| Level | What |
+|---|---|
+| `INFO` | Each service client created: its base URL and where it came from. |
+| `DEBUG` | The settings it resolved, with default header names; each request, with status and time; the variable each secret was read from. |
+
+```text
+INFO  Service client on https://payments.qa.example.com (base.url from service config 'payments-qa.properties')
+DEBUG GET https://payments.qa.example.com/invoices?customer=…&page=… -> 200 in 41 ms
+```
+
+Values that may be secret are never logged: not secrets, not header values, not query values.
