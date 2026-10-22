@@ -32,6 +32,10 @@ _Avoid_: Session, profile
 One web application under test, with a name and its own base URL. Every page object that can be opened names its app, so a test can move between apps without naming a host. There is no default app.
 _Avoid_: Host, site, domain, base URL (alone)
 
+**Environment**:
+One deployment of the apps under test (QA, staging), described by its own config file. A suite runs against one environment; QA is the default.
+_Avoid_: Stage, profile, target
+
 **Path**:
 Where a page object lives within its app, relative to the app's base URL, possibly with named parameters (`/users/{id}`). It maps the app's screens for navigation; tests do not assert on it.
 _Avoid_: URL, route, endpoint

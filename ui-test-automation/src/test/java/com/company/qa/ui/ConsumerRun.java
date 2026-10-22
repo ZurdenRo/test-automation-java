@@ -21,14 +21,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code ui-test.properties} written
- * for the run and put on the classpath, and reports how each test method ended.
+ * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code ui-test-qa.properties} (the
+ * default config resource) written for the run and put on the classpath, and reports how each test method ended.
  */
 final class ConsumerRun {
 
     private final Path classpathDir;
     private final StringBuilder config = new StringBuilder();
     private final Map<String, Map<String, String>> tests = new LinkedHashMap<>();
+    private final Map<String, String> suiteParameters = new LinkedHashMap<>();
     private String parallel;
 
     private ConsumerRun(Path classpathDir) {
@@ -51,21 +52,28 @@ final class ConsumerRun {
         return this;
     }
 
+    /** A {@code <parameter>} of the {@code <suite>}, which every {@code <test>} in it inherits. */
+    ConsumerRun suiteParameter(String name, String value) {
+        suiteParameters.put(name, value);
+        return this;
+    }
+
     ConsumerRun parallelMethods() {
         parallel = "methods";
         return this;
     }
 
-    /** Writes another config resource, for a consumer that overrides the resource name. */
+    /** Writes another config resource, for a suite that names its environment's. */
     ConsumerRun resource(String name, String content) {
         write(name, content);
         return this;
     }
 
     Results run(Class<?>... classes) {
-        write("ui-test.properties", config.toString());
+        write("ui-test-qa.properties", config.toString());
         XmlSuite suite = new XmlSuite();
         suite.setName("consumer");
+        suite.setParameters(new LinkedHashMap<>(suiteParameters));
         if (parallel != null) {
             suite.setParallel(XmlSuite.ParallelMode.METHODS);
             suite.setThreadCount(4);

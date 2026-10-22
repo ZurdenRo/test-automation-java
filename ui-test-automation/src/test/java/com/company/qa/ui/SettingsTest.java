@@ -61,10 +61,12 @@ class SettingsTest {
     }
 
     @Test
-    void aTestCanNameItsOwnConfigResource() {
+    void theSuiteNamesTheConfigOfItsEnvironment() {
         ConsumerRun.in(classpathDir)
-                .resource("shop.properties", "app.shop.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
-                .run(UsesShopConfigTest.class)
+                .resource("ui-test-staging.properties",
+                        "app.shop.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
+                .suiteParameter("ui.config", "ui-test-staging.properties")
+                .run(RunsOnStagingTest.class)
                 .assertAllPassed();
     }
 
@@ -120,14 +122,9 @@ class SettingsTest {
         }
     }
 
-    public static class UsesShopConfigTest extends BaseUiTest {
-        @Override
-        protected String configResource() {
-            return "shop.properties";
-        }
-
+    public static class RunsOnStagingTest extends BaseUiTest {
         @org.testng.annotations.Test
-        public void usesShopConfig() {
+        public void runsOnStaging() {
             org.testng.Assert.assertEquals(open(ProbePage.class).width(), 640);
         }
     }

@@ -47,8 +47,8 @@ class AppsTest {
                 .config("app.a.url", appA.url())
                 .run(OpensInvoiceTest.class);
 
-        assertEquals("Missing 'app.billing.url' for InvoicePage (blank values count as missing): looked in"
-                        + " environment variable QA_UI_APP_BILLING_URL, ui-test.properties",
+        assertEquals("Missing 'app.billing.url' for InvoicePage in ui-test-qa.properties"
+                        + " (blank values count as missing)",
                 results.failure("opensInvoice").getMessage());
     }
 

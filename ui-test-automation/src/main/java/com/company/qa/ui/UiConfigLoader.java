@@ -14,8 +14,8 @@ import java.util.Set;
 
 /**
  * Resolves each setting from, in order: a {@code <parameter>} of the TestNG {@code <test>} (only for the settings
- * that make sense to vary per {@code <test>}), an environment variable, the config resource, a default.
- * Remembers where each value came from so that errors can say so.
+ * that make sense to vary per {@code <test>}), the config resource, a default. Remembers where each value came
+ * from so that errors can say so. Environment variables are not a source: they hold secrets only.
  */
 final class UiConfigLoader {
 
@@ -29,28 +29,33 @@ final class UiConfigLoader {
     static final String EVIDENCE_DIR = "evidence.dir";
     static final String TRACE = "trace";
 
-    private static final String ENV_PREFIX = "QA_UI_";
+    static final String CONFIG = "ui.config";
+    static final String DEFAULT_CONFIG_RESOURCE = "ui-test-qa.properties";
     private static final Set<String> XML_SETTINGS = Set.of(BROWSER, CHANNEL, HEADLESS, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     private static final List<String> BROWSERS = List.of("chromium", "firefox", "webkit");
     private static final List<String> CHANNELS = List.of("chrome", "msedge");
     private static final List<String> TRACE_MODES = List.of("off", "on-failure");
 
     private final String resource;
-    private final Map<String, String> env;
     private final Map<String, String> xmlParameters;
     private final Properties file;
 
-    private UiConfigLoader(String resource, Map<String, String> env, Map<String, String> xmlParameters,
-                           Properties file) {
+    private UiConfigLoader(String resource, Map<String, String> xmlParameters, Properties file) {
         this.resource = resource;
-        this.env = env;
         this.xmlParameters = xmlParameters;
         this.file = file;
     }
 
-    /** @param xmlParameters the {@code <parameter>}s of the TestNG {@code <test>} running, empty outside one */
-    static UiConfig load(String resource, Map<String, String> env, Map<String, String> xmlParameters) {
-        UiConfigLoader loader = new UiConfigLoader(resource, env, xmlParameters, read(resource));
+    /**
+     * @param xmlParameters the {@code <parameter>}s of the TestNG {@code <test>} running, its suite's included;
+     *                      {@code ui.config} among them names the config resource of the suite's environment
+     */
+    static UiConfig load(Map<String, String> xmlParameters) {
+        String named = xmlParameters.get(CONFIG);
+        String resource = isPresent(named) ? named.trim() : DEFAULT_CONFIG_RESOURCE;
+        String origin = isPresent(named) ? "from <parameter> " + CONFIG
+                : "the default; name another with <parameter> " + CONFIG;
+        UiConfigLoader loader = new UiConfigLoader(resource, xmlParameters, read(resource, origin));
         return new UiConfig(loader,
                 loader.oneOf(BROWSER, BROWSERS, "chromium", " or "),
                 loader.oneOf(CHANNEL, CHANNELS, null, " or "),
@@ -67,7 +72,7 @@ final class UiConfigLoader {
     String appUrl(String app, String pageName) {
         String key = "app." + app + ".url";
         return find(key).map(s -> s.value).orElseThrow(() -> new UiConfigException("Missing '" + key + "' for "
-                + pageName + " (blank values count as missing): looked in " + places(key)));
+                + pageName + " in " + resource + " (blank values count as missing)"));
     }
 
     private Optional<Setting> find(String key) {
@@ -77,21 +82,11 @@ final class UiConfigLoader {
                 return Optional.of(new Setting(fromXml, "<parameter> " + key));
             }
         }
-        String envName = envName(key);
-        String fromEnv = env.get(envName);
-        if (isPresent(fromEnv)) {
-            return Optional.of(new Setting(fromEnv, "environment variable " + envName));
-        }
         String fromFile = file.getProperty(key);
         if (isPresent(fromFile)) {
             return Optional.of(new Setting(fromFile, resource));
         }
         return Optional.empty();
-    }
-
-    private String places(String key) {
-        return (XML_SETTINGS.contains(key) ? "<parameter> " + key + ", " : "")
-                + "environment variable " + envName(key) + ", " + resource;
     }
 
     private String oneOf(String key, List<String> allowed, String fallback, String lastSeparator) {
@@ -153,19 +148,16 @@ final class UiConfigLoader {
                 + "': expected " + expected);
     }
 
-    private static String envName(String key) {
-        return ENV_PREFIX + key.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_");
-    }
-
     private static boolean isPresent(String value) {
         return value != null && !value.trim().isEmpty();
     }
 
-    private static Properties read(String resource) {
+    private static Properties read(String resource, String origin) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         try (InputStream in = loader.getResourceAsStream(resource)) {
             if (in == null) {
-                throw new UiConfigException("Config resource '" + resource + "' not found on the classpath");
+                throw new UiConfigException("Config resource '" + resource + "' (" + origin
+                        + ") not found on the classpath");
             }
             Properties properties = new Properties();
             properties.load(new InputStreamReader(in, StandardCharsets.UTF_8));

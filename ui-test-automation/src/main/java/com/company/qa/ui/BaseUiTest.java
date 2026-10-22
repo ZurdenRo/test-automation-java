@@ -18,15 +18,13 @@ import java.util.Map;
  */
 public abstract class BaseUiTest {
 
-    private static final String DEFAULT_CONFIG_RESOURCE = "ui-test.properties";
-
     // TestNG shares one instance across threads when it runs methods in parallel.
     private final ThreadLocal<UiSession> session = new ThreadLocal<>();
 
     @BeforeMethod(alwaysRun = true)
     public void startBrowserContext(ITestContext context) {
         Map<String, String> xmlParameters = context.getCurrentXmlTest().getAllParameters();
-        session.set(UiSession.start(UiConfigLoader.load(configResource(), System.getenv(), xmlParameters)));
+        session.set(UiSession.start(UiConfigLoader.load(xmlParameters)));
     }
 
     /** Keeps the failure evidence of a failed test (logged to the TestNG report), then closes the context. */
@@ -47,11 +45,6 @@ public abstract class BaseUiTest {
     @AfterSuite(alwaysRun = true)
     public void closeBrowsers() {
         UiSession.closeBrowsers();
-    }
-
-    /** The config resource on the classpath; override it for a project whose tests use another. */
-    protected String configResource() {
-        return DEFAULT_CONFIG_RESOURCE;
     }
 
     /** Navigates the test's tab to the page object's path and returns the page object. How a test starts. */

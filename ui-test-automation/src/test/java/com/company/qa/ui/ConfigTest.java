@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -29,8 +30,8 @@ class ConfigTest {
     }
 
     @Test
-    void defaultsApplyWhenNoSourceSetsAValue() throws Exception {
-        UiConfig config = load("", Map.of(), Map.of());
+    void defaultsApplyWhenTheFileSetsNothing() throws Exception {
+        UiConfig config = load("", Map.of());
 
         assertEquals("chromium", config.browser());
         assertNull(config.channel());
@@ -47,7 +48,7 @@ class ConfigTest {
     void theFileSetsEverySetting() throws Exception {
         UiConfig config = load("browser=firefox\nchannel=chrome\nheadless=false\ntimeout.ms=500\n"
                 + "viewport.width=800\nviewport.height=600\nslow.mo.ms=50\nevidence.dir=out/evidence\n"
-                + "trace=on-failure\n", Map.of(), Map.of());
+                + "trace=on-failure\napp.shop.url=http://shop\n", Map.of());
 
         assertEquals("firefox", config.browser());
         assertEquals("chrome", config.channel());
@@ -58,22 +59,29 @@ class ConfigTest {
         assertEquals(50, config.slowMoMs());
         assertEquals(Path.of("out/evidence"), config.evidenceDir());
         assertTrue(config.traceOnFailure());
+        assertEquals("http://shop", config.appUrl("shop", "HomePage"));
     }
 
     @Test
-    void anEnvironmentVariableBeatsTheFile() throws Exception {
-        UiConfig config = load("headless=false\ntimeout.ms=500\napp.billing.url=http://file\n",
-                Map.of("QA_UI_HEADLESS", "true", "QA_UI_TIMEOUT_MS", "900", "QA_UI_APP_BILLING_URL", "http://env"),
-                Map.of());
+    void theDefaultFileIsTheQaOne() throws Exception {
+        write("ui-test-qa.properties", "app.shop.url=http://qa\n");
 
-        assertTrue(config.headless());
-        assertEquals(900, config.timeoutMs());
-        assertEquals("http://env", config.appUrl("billing", "InvoicePage"));
+        assertEquals("http://qa", UiConfigLoader.load(Map.of()).appUrl("shop", "HomePage"));
     }
 
     @Test
-    void anXmlParameterBeatsTheEnvironmentForBrowserChannelHeadlessAndViewport() throws Exception {
-        UiConfig config = load("", Map.of("QA_UI_BROWSER", "chromium", "QA_UI_HEADLESS", "true"),
+    void theSuiteNamesTheFileOfItsEnvironment() throws Exception {
+        write("ui-test-qa.properties", "app.shop.url=http://qa\n");
+        write("ui-test-staging.properties", "app.shop.url=http://staging\n");
+
+        UiConfig config = UiConfigLoader.load(Map.of("ui.config", "ui-test-staging.properties"));
+
+        assertEquals("http://staging", config.appUrl("shop", "HomePage"));
+    }
+
+    @Test
+    void anXmlParameterBeatsTheFileForBrowserChannelHeadlessAndViewport() throws Exception {
+        UiConfig config = load("browser=chromium\nheadless=true\n",
                 Map.of("browser", "firefox", "channel", "msedge", "headless", "false",
                         "viewport.width", "640", "viewport.height", "480"));
 
@@ -86,58 +94,81 @@ class ConfigTest {
 
     @Test
     void xmlParametersForOtherSettingsAreIgnored() throws Exception {
-        UiConfig config = load("timeout.ms=500\n", Map.of(), Map.of("timeout.ms", "900", "app.shop.url", "http://xml"));
+        UiConfig config = load("timeout.ms=500\n", Map.of("timeout.ms", "900", "app.shop.url", "http://xml"));
 
         assertEquals(500, config.timeoutMs());
         assertThrows(UiConfigException.class, () -> config.appUrl("shop", "HomePage"));
     }
 
     @Test
-    void anUnknownBrowserListsTheSupportedOnes() throws Exception {
-        UiConfigException e = assertThrows(UiConfigException.class,
-                () -> load("", Map.of("QA_UI_BROWSER", "opera"), Map.of()));
+    void aMissingAppUrlNamesTheFileToAddItTo() throws Exception {
+        UiConfig config = load("", Map.of());
 
-        assertEquals("'browser' from environment variable QA_UI_BROWSER is 'opera': expected chromium, firefox"
-                + " or webkit", e.getMessage());
+        UiConfigException e = assertThrows(UiConfigException.class, () -> config.appUrl("billing", "InvoicePage"));
+
+        assertEquals("Missing 'app.billing.url' for InvoicePage in ui-test-qa.properties"
+                + " (blank values count as missing)", e.getMessage());
+    }
+
+    @Test
+    void anUnknownBrowserListsTheSupportedOnes() throws Exception {
+        UiConfigException e = assertThrows(UiConfigException.class, () -> load("browser=opera\n", Map.of()));
+
+        assertEquals("'browser' from ui-test-qa.properties is 'opera': expected chromium, firefox or webkit",
+                e.getMessage());
     }
 
     @Test
     void anUnknownChannelListsTheSupportedOnes() throws Exception {
-        UiConfigException e = assertThrows(UiConfigException.class,
-                () -> load("", Map.of(), Map.of("channel", "safari")));
+        UiConfigException e = assertThrows(UiConfigException.class, () -> load("", Map.of("channel", "safari")));
 
         assertEquals("'channel' from <parameter> channel is 'safari': expected chrome or msedge", e.getMessage());
     }
 
     @Test
     void aNonNumericTimeoutSaysWhereItCameFrom() throws Exception {
-        UiConfigException e = assertThrows(UiConfigException.class, () -> load("timeout.ms=soon\n", Map.of(), Map.of()));
+        UiConfigException e = assertThrows(UiConfigException.class, () -> load("timeout.ms=soon\n", Map.of()));
 
-        assertEquals("'timeout.ms' from ui-test.properties is 'soon': expected a positive whole number",
+        assertEquals("'timeout.ms' from ui-test-qa.properties is 'soon': expected a positive whole number",
                 e.getMessage());
     }
 
     @Test
     void anUnknownTraceModeListsTheSupportedOnes() throws Exception {
-        UiConfigException e = assertThrows(UiConfigException.class, () -> load("trace=always\n", Map.of(), Map.of()));
+        UiConfigException e = assertThrows(UiConfigException.class, () -> load("trace=always\n", Map.of()));
 
-        assertEquals("'trace' from ui-test.properties is 'always': expected off or on-failure", e.getMessage());
+        assertEquals("'trace' from ui-test-qa.properties is 'always': expected off or on-failure", e.getMessage());
     }
 
     @Test
-    void aMissingConfigResourceIsNamed() {
+    void aMissingConfigResourceSaysWhichSuiteParameterNamesIt() {
         Thread.currentThread().setContextClassLoader(classLoader());
 
         UiConfigException e = assertThrows(UiConfigException.class,
-                () -> UiConfigLoader.load("other.properties", Map.of(), Map.of()));
+                () -> UiConfigLoader.load(Map.of("ui.config", "ui-test-prod.properties")));
 
-        assertEquals("Config resource 'other.properties' not found on the classpath", e.getMessage());
+        assertEquals("Config resource 'ui-test-prod.properties' (from <parameter> ui.config) not found on the"
+                + " classpath", e.getMessage());
     }
 
-    private UiConfig load(String file, Map<String, String> env, Map<String, String> xmlParameters) throws Exception {
-        Files.writeString(classpathDir.resolve("ui-test.properties"), file);
+    @Test
+    void aMissingDefaultConfigResourceSaysHowToNameAnother() {
         Thread.currentThread().setContextClassLoader(classLoader());
-        return UiConfigLoader.load("ui-test.properties", env, xmlParameters);
+
+        UiConfigException e = assertThrows(UiConfigException.class, () -> UiConfigLoader.load(Map.of()));
+
+        assertEquals("Config resource 'ui-test-qa.properties' (the default; name another with <parameter>"
+                + " ui.config) not found on the classpath", e.getMessage());
+    }
+
+    private UiConfig load(String file, Map<String, String> xmlParameters) throws IOException {
+        write("ui-test-qa.properties", file);
+        return UiConfigLoader.load(xmlParameters);
+    }
+
+    private void write(String name, String content) throws IOException {
+        Files.writeString(classpathDir.resolve(name), content);
+        Thread.currentThread().setContextClassLoader(classLoader());
     }
 
     private ClassLoader classLoader() {

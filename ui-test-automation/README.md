@@ -109,12 +109,24 @@ A test moves between apps by opening their pages, in one tab or in several. Sinc
 
 ## Configuration
 
-Settings live in `ui-test.properties` on the test classpath (override `configResource()` for another name). For each setting, the first value found wins:
+Settings live in one `.properties` file per environment on the test classpath (`src/test/resources`). `ui-test-qa.properties` is the default; a suite names its environment's file with the `ui.config` parameter:
 
-1. a `<parameter>` of the running `<test>` in `testng.xml` (only `browser`, `channel`, `headless`, `viewport.width`, `viewport.height`)
-2. an environment variable: `QA_UI_` and the key in capitals with `_` for `.`, such as `QA_UI_HEADLESS` or `QA_UI_APP_SHOP_URL`
-3. the config resource
-4. the default
+```xml
+<suite name="checkout-staging">
+  <parameter name="ui.config" value="ui-test-staging.properties"/>
+  <test name="checkout"><classes>...</classes></test>
+</suite>
+```
+
+So each suite xml points at one environment, and CI picks the environment by picking the xml.
+
+For each setting, the first value found wins:
+
+1. a `<parameter>` of the running `<test>` or its `<suite>` (only `browser`, `channel`, `headless`, `viewport.width`, `viewport.height`)
+2. the config file
+3. the default
+
+Environment variables are not read for settings: they are for secrets only.
 
 | Key | Default | |
 |---|---|---|
