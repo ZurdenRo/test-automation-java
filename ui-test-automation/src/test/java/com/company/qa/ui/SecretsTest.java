@@ -57,7 +57,7 @@ class SecretsTest {
         write("ui-test-qa.properties", "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
         write("ui-test-dev.properties", "secret.admin.password=SHOP_DEV_ADMIN_PASSWORD\n");
 
-        UiConfig config = UiConfigLoader.load(Map.of("ui.config", "ui-test-dev.properties"),
+        UiConfig config = UiConfigLoader.load(Map.of("env", "dev"),
                 Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret", "SHOP_DEV_ADMIN_PASSWORD", "dev-secret"));
 
         assertEquals("dev-secret", config.secret("admin.password"));

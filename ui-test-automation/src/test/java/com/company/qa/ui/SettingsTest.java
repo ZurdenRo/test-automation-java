@@ -65,7 +65,7 @@ class SettingsTest {
         ConsumerRun.in(classpathDir)
                 .resource("ui-test-staging.properties",
                         "app.shop.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
-                .suiteParameter("ui.config", "ui-test-staging.properties")
+                .suiteParameter("env", "staging")
                 .run(RunsOnStagingTest.class)
                 .assertAllPassed();
     }
@@ -125,6 +125,7 @@ class SettingsTest {
     public static class RunsOnStagingTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void runsOnStaging() {
+            org.testng.Assert.assertEquals(environment(), "staging");
             org.testng.Assert.assertEquals(open(ProbePage.class).width(), 640);
         }
     }
