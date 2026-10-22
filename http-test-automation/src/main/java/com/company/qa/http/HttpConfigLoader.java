@@ -12,8 +12,9 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
- * Resolves each setting from, in order: the builder, an environment variable, the service config, a default.
- * Remembers where each value came from so that errors can say so.
+ * Resolves each setting from, in order: the builder, the service config, a default.
+ * Remembers where each value came from so that errors can say so. Environment variables are not a source: they hold
+ * secrets only (docs/adr/0001 at the repository root).
  */
 final class HttpConfigLoader {
 
@@ -29,30 +30,22 @@ final class HttpConfigLoader {
     private static final int DEFAULT_MAX_CONNECTIONS = 20;
 
     private final String resource;
-    private final String envPrefix;
-    private final Map<String, String> env;
     private final Map<String, String> overrides;
     private final Properties file;
 
-    private HttpConfigLoader(String resource, String envPrefix, Map<String, String> env,
-                             Map<String, String> overrides, Properties file) {
+    private HttpConfigLoader(String resource, Map<String, String> overrides, Properties file) {
         this.resource = resource;
-        this.envPrefix = envPrefix;
-        this.env = env;
         this.overrides = overrides;
         this.file = file;
     }
 
     /**
      * @param resource  classpath resource name, or null when there is no config file
-     * @param envPrefix explicit environment variable prefix, or null to derive it from the resource name
      * @param overrides settings given directly to the builder, by key
      */
-    static HttpConfig load(String resource, String envPrefix, Map<String, String> env,
-                           Map<String, String> overrides, Headers builderHeaders) {
+    static HttpConfig load(String resource, Map<String, String> overrides, Headers builderHeaders) {
         Properties file = resource == null ? new Properties() : read(resource);
-        String prefix = envPrefix != null ? envPrefix : derivePrefix(resource);
-        HttpConfigLoader loader = new HttpConfigLoader(resource, prefix, env, overrides, file);
+        HttpConfigLoader loader = new HttpConfigLoader(resource, overrides, file);
 
         Setting baseUrl = loader.find(BASE_URL).orElseThrow(() ->
                 new HttpTransportException("Missing '" + BASE_URL + "' (blank values count as missing): looked in "
@@ -70,11 +63,6 @@ final class HttpConfigLoader {
         String fromBuilder = overrides.get(key);
         if (isPresent(fromBuilder)) {
             return Optional.of(new Setting(fromBuilder, "the builder"));
-        }
-        String envName = envName(key);
-        String fromEnv = env.get(envName);
-        if (isPresent(fromEnv)) {
-            return Optional.of(new Setting(fromEnv, "environment variable " + envName));
         }
         String fromFile = file.getProperty(key);
         if (isPresent(fromFile)) {
@@ -113,7 +101,7 @@ final class HttpConfigLoader {
         throw invalid(setting, key, "true or false");
     }
 
-    /** A blank value is treated as absent, so an empty variable or {@code key=} never hides a real value. */
+    /** A blank value is treated as absent, so {@code key=} never hides a real value. */
     private static boolean isPresent(String value) {
         return value != null && !value.trim().isEmpty();
     }
@@ -136,25 +124,10 @@ final class HttpConfigLoader {
     }
 
     private String places(String key) {
-        String places = "the builder, environment variable " + envName(key);
-        return resource == null ? places : places + ", service config '" + resource + "'";
+        return resource == null ? "the builder" : "the builder, service config '" + resource + "'";
     }
 
-    private String envName(String key) {
-        return envPrefix + key.toUpperCase(Locale.ROOT).replace('.', '_');
-    }
 
-    private static String derivePrefix(String resource) {
-        if (resource == null) {
-            return "QA_HTTP_";
-        }
-        String name = resource.substring(resource.lastIndexOf('/') + 1);
-        int dot = name.lastIndexOf('.');
-        if (dot > 0) {
-            name = name.substring(0, dot);
-        }
-        return "QA_HTTP_" + name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_") + "_";
-    }
 
     private static Properties read(String resource) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();

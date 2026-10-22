@@ -9,4 +9,4 @@ Both modules first let an environment variable override any setting (`QA_HTTP_<R
 - What a run used is readable from the repository: the suite xml names the file, the file holds the values.
 - One file per environment, so a value shared by all of them is repeated in each.
 - CI chooses an environment by choosing a suite, not by exporting variables; it exports only secrets.
-- http-test-automation is aligned in a separate change.
+- In http-test-automation a setting comes from the builder or the service config; `HttpTransportBuilder.envPrefix(...)` and `.environment(...)` were removed before the first release.

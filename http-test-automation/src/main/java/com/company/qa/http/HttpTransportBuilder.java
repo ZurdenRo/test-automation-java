@@ -5,33 +5,19 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Configures an {@link HttpServiceClient}. A value given here beats an environment variable, which beats the
- * service config, which beats the default. Building fails if the base URL cannot be resolved.
+ * Configures an {@link HttpServiceClient}. A value given here beats the service config, which beats the default.
+ * Building fails if the base URL cannot be resolved.
  */
 public final class HttpTransportBuilder {
 
     private final Map<String, String> overrides = new HashMap<>();
     private String resource;
-    private String envPrefix;
-    private Map<String, String> environment = System.getenv();
     private Headers defaultHeaders = Headers.empty();
     private BodyCodec bodyCodec = new JacksonBodyCodec();
 
     /** The service config: a {@code .properties} file on the classpath, named by the consumer, for this service client. */
     public HttpTransportBuilder configResource(String resource) {
         this.resource = resource;
-        return this;
-    }
-
-    /** Prefix of this service client's environment variables. Defaults to {@code QA_HTTP_<RESOURCE NAME>_}. */
-    public HttpTransportBuilder envPrefix(String envPrefix) {
-        this.envPrefix = envPrefix;
-        return this;
-    }
-
-    /** The environment to read variables from. Defaults to the process environment. */
-    public HttpTransportBuilder environment(Map<String, String> environment) {
-        this.environment = environment;
         return this;
     }
 
@@ -69,7 +55,7 @@ public final class HttpTransportBuilder {
 
     HttpTransport build() {
         return new HttpTransport(
-                HttpConfigLoader.load(resource, envPrefix, environment, overrides, defaultHeaders),
+                HttpConfigLoader.load(resource, overrides, defaultHeaders),
                 bodyCodec);
     }
 

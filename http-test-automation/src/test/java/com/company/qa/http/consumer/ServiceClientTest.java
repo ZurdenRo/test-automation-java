@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -84,7 +83,7 @@ class ServiceClientTest {
         try {
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
             try (UsersClient client = new UsersClient(
-                    new HttpTransportBuilder().baseUrl(baseUrl).environment(Map.of()))) {
+                    new HttpTransportBuilder().baseUrl(baseUrl))) {
 
                 assertEquals("GET /api/v1/users/42?null|null|", client.getUser(42).body());
                 assertEquals("GET /api/v1/users?name=Ada|t1|", client.findUsers("Ada").body());
