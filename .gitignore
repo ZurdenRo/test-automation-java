@@ -3,4 +3,5 @@
 .idea
 # Ignore Gradle build output directory
 build
-**/build
+**/build# Failure evidence of UI tests
+ui-evidence
