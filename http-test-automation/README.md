@@ -50,6 +50,24 @@ Create one per suite and close it in teardown (or use try-with-resources): it ow
   }
   ```
 
+## Secrets
+
+Tokens, users and passwords live in environment variables, never in a service config. The service config names the variable that holds each secret, and the client asks for it by that name:
+
+```properties
+# payments-qa.properties
+base.url=https://payments.qa.example.com
+secret.api.token=PAYMENTS_QA_TOKEN
+```
+
+```java
+public HttpResponse getInvoice(int id) {
+    return get(HttpRequest.to("/invoices/" + id).header("Authorization", "Bearer " + secret("api.token")));
+}
+```
+
+A config per environment (`payments-dev.properties` with `secret.api.token=PAYMENTS_DEV_TOKEN`) points the same client at that environment's variable. A missing `secret.<name>` key or an unset variable fails the call, naming the key or the variable and never the value.
+
 ## Configuration
 
 Settings come from the service config and `HttpTransportBuilder`; a value given to the builder beats the service config, which beats the default. Environment variables are not read for settings: they are for secrets only (see `docs/adr/0001` at the repository root). Pass a builder to the constructor for anything beyond the config file:

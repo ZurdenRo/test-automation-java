@@ -69,6 +69,15 @@ public abstract class HttpServiceClient implements Closeable {
         return transport.delete(request);
     }
 
+    /**
+     * A secret (a token, a user, a password) by name: {@code secret("api.token")} reads the environment variable that
+     * {@code secret.api.token} names in the service config, so each environment's config can point at its own
+     * variable. Use it to build a request; never log it.
+     */
+    protected String secret(String name) {
+        return transport.secret(name);
+    }
+
     /** Closes the connection pool. */
     @Override
     public void close() {

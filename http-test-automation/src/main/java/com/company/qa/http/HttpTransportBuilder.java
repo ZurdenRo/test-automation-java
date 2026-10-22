@@ -14,6 +14,7 @@ public final class HttpTransportBuilder {
     private String resource;
     private Headers defaultHeaders = Headers.empty();
     private BodyCodec bodyCodec = new JacksonBodyCodec();
+    private Map<String, String> secretsEnv = System.getenv();
 
     /** The service config: a {@code .properties} file on the classpath, named by the consumer, for this service client. */
     public HttpTransportBuilder configResource(String resource) {
@@ -53,9 +54,15 @@ public final class HttpTransportBuilder {
         return this;
     }
 
+    /** Where secrets are read from instead of the process environment; for tests. */
+    HttpTransportBuilder secretsFrom(Map<String, String> env) {
+        this.secretsEnv = env;
+        return this;
+    }
+
     HttpTransport build() {
         return new HttpTransport(
-                HttpConfigLoader.load(resource, overrides, defaultHeaders),
+                HttpConfigLoader.load(resource, overrides, defaultHeaders, secretsEnv),
                 bodyCodec);
     }
 

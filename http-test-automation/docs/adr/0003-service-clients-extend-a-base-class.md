@@ -11,7 +11,7 @@ We first chose composition: a public interface plus a builder, and the consumer 
 
 ## Consequences
 
-- Every `protected` member of `HttpServiceClient` is API we cannot change without breaking subclasses owned by other teams. Keep that surface to one `String` shortcut and one `HttpRequest` form per verb (`get`, `post`, `put`, `patch`, `delete`), `close()` and two constructors.
+- Every `protected` member of `HttpServiceClient` is API we cannot change without breaking subclasses owned by other teams. Keep that surface to one `String` shortcut and one `HttpRequest` form per verb (`get`, `post`, `put`, `patch`, `delete`), `secret(name)`, `close()` and two constructors. `secret(name)` was added so a client reads its tokens the way UI tests do (root `docs/adr/0001`), instead of each client calling `System.getenv` with a hardcoded, environment-specific name.
 - A consumer client can extend no other class.
 - There is no public seam to substitute the transport; a consumer test that needs a fake server uses a real local one, as ours do.
 - Supersedes the composition shape (interface + builder) agreed earlier; ADR-0002 still holds, since `HttpServiceClient` exposes no third-party type.
