@@ -38,7 +38,7 @@ class ComponentTest {
     @Test
     void aComponentActsOnlyWithinItsRoot() {
         ConsumerRun.in(classpathDir).config("base.url", site.url())
-                .run(ClosesTheSecondOrder.class)
+                .run(ClosesTheSecondOrderTest.class)
                 .assertAllPassed();
     }
 
@@ -71,7 +71,7 @@ class ComponentTest {
         }
     }
 
-    public static class ClosesTheSecondOrder extends BaseUiTest {
+    public static class ClosesTheSecondOrderTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void closesTheSecondOrder() {
             OrdersPage orders = open(OrdersPage.class);

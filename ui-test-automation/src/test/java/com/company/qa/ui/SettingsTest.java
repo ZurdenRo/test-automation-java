@@ -35,7 +35,7 @@ class SettingsTest {
     void theViewportComesFromTheConfig() {
         ConsumerRun.in(classpathDir).config("base.url", site.url())
                 .config("viewport.width", "800").config("viewport.height", "600")
-                .run(ChecksViewport.class)
+                .run(ChecksViewportTest.class)
                 .assertAllPassed();
     }
 
@@ -43,7 +43,7 @@ class SettingsTest {
     void theTimeoutBoundsHowLongAnActionWaits() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
                 .config("timeout.ms", "300")
-                .run(ClicksWhatIsNotThere.class);
+                .run(ClicksWhatIsNotThereTest.class);
 
         assertTrue(results.failure("clicksWhatIsNotThere").getMessage().contains("Timeout 300ms"),
                 results.summary());
@@ -54,7 +54,7 @@ class SettingsTest {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
                 .xmlTest("on chromium", Map.of("browser", "chromium"))
                 .xmlTest("on firefox", Map.of("browser", "firefox"))
-                .run(ChecksBrowser.class)
+                .run(ChecksBrowserTest.class)
                 .assertAllPassed();
 
         assertEquals(List.of("runsInTheNamedBrowser", "runsInTheNamedBrowser"), results.passed());
@@ -64,7 +64,7 @@ class SettingsTest {
     void aTestCanNameItsOwnConfigResource() {
         ConsumerRun.in(classpathDir)
                 .resource("shop.properties", "base.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
-                .run(UsesShopConfig.class)
+                .run(UsesShopConfigTest.class)
                 .assertAllPassed();
     }
 
@@ -95,7 +95,7 @@ class SettingsTest {
         }
     }
 
-    public static class ChecksViewport extends BaseUiTest {
+    public static class ChecksViewportTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void checksViewport() {
             ProbePage probe = open(ProbePage.class);
@@ -104,14 +104,14 @@ class SettingsTest {
         }
     }
 
-    public static class ClicksWhatIsNotThere extends BaseUiTest {
+    public static class ClicksWhatIsNotThereTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void clicksWhatIsNotThere() {
             open(ProbePage.class).clickMissingButton();
         }
     }
 
-    public static class ChecksBrowser extends BaseUiTest {
+    public static class ChecksBrowserTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void runsInTheNamedBrowser(ITestContext context) {
             String browser = context.getCurrentXmlTest().getParameter("browser");
@@ -120,7 +120,7 @@ class SettingsTest {
         }
     }
 
-    public static class UsesShopConfig extends BaseUiTest {
+    public static class UsesShopConfigTest extends BaseUiTest {
         @Override
         protected String configResource() {
             return "shop.properties";

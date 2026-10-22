@@ -37,7 +37,7 @@ class AppsTest {
         ConsumerRun.in(classpathDir)
                 .config("base.url", appA.url())
                 .config("app.billing.url", appB.url())
-                .run(GoesFromAToBAndBack.class)
+                .run(GoesFromAToBAndBackTest.class)
                 .assertAllPassed();
     }
 
@@ -45,7 +45,7 @@ class AppsTest {
     void aPageOfAnAppWithoutAUrlNamesTheSettingToAdd() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
                 .config("base.url", appA.url())
-                .run(OpensInvoice.class);
+                .run(OpensInvoiceTest.class);
 
         assertEquals("Missing 'app.billing.url' for InvoicePage (blank values count as missing): looked in"
                         + " environment variable QA_UI_APP_BILLING_URL, ui-test.properties",
@@ -87,7 +87,7 @@ class AppsTest {
         }
     }
 
-    public static class GoesFromAToBAndBack extends BaseUiTest {
+    public static class GoesFromAToBAndBackTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void goesFromAToBAndBack() {
             assertThat(open(HomePage.class).appName()).hasText("appA");
@@ -96,7 +96,7 @@ class AppsTest {
         }
     }
 
-    public static class OpensInvoice extends BaseUiTest {
+    public static class OpensInvoiceTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void opensInvoice() {
             open(InvoicePage.class);

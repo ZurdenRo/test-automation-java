@@ -33,12 +33,12 @@ class TabsTest {
 
     @Test
     void onWrapsTheScreenTheAppReachedWithoutNavigating() {
-        run(FollowsALink.class).assertAllPassed();
+        run(FollowsALinkTest.class).assertAllPassed();
     }
 
     @Test
     void eachPageObjectActsOnTheTabItWasOpenedOn() {
-        run(UsesTwoTabs.class).assertAllPassed();
+        run(UsesTwoTabsTest.class).assertAllPassed();
     }
 
     private ConsumerRun.Results run(Class<?> test) {
@@ -97,7 +97,7 @@ class TabsTest {
         }
     }
 
-    public static class FollowsALink extends BaseUiTest {
+    public static class FollowsALinkTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void followsALink() {
             open(HomePage.class).followLink();
@@ -105,7 +105,7 @@ class TabsTest {
         }
     }
 
-    public static class UsesTwoTabs extends BaseUiTest {
+    public static class UsesTwoTabsTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void usesTwoTabs() {
             HomePage home = open(HomePage.class);

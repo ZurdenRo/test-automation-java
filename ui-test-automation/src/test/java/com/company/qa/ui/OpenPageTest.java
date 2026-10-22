@@ -33,14 +33,14 @@ class OpenPageTest {
     @Test
     void openNavigatesToThePageObjectsPathOnTheDefaultApp() {
         ConsumerRun.in(classpathDir).config("base.url", site.url())
-                .run(OpensLoginPage.class)
+                .run(OpensLoginPageTest.class)
                 .assertAllPassed();
     }
 
     @Test
     void openingAPageWithoutAPathSaysHowToReachIt() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
-                .run(OpensDashboardPage.class);
+                .run(OpensDashboardPageTest.class);
 
         assertEquals(List.of("opensDashboard"), results.failed());
         assertEquals("DashboardPage has no path: reach it from another page, or use on(DashboardPage.class)",
@@ -50,7 +50,7 @@ class OpenPageTest {
     @Test
     void aPageObjectWithoutAPageConstructorIsNamed() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
-                .run(OpensNoConstructorPage.class);
+                .run(OpensNoConstructorPageTest.class);
 
         assertEquals("NoConstructorPage needs a public constructor taking a Page",
                 results.failure("opensIt").getMessage());
@@ -67,7 +67,7 @@ class OpenPageTest {
         }
     }
 
-    public static class OpensNoConstructorPage extends BaseUiTest {
+    public static class OpensNoConstructorPageTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void opensIt() {
             open(NoConstructorPage.class);
@@ -80,7 +80,7 @@ class OpenPageTest {
         }
     }
 
-    public static class OpensDashboardPage extends BaseUiTest {
+    public static class OpensDashboardPageTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void opensDashboard() {
             open(DashboardPage.class);
@@ -106,7 +106,7 @@ class OpenPageTest {
         }
     }
 
-    public static class OpensLoginPage extends BaseUiTest {
+    public static class OpensLoginPageTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void opensLogin() {
             LoginPage login = open(LoginPage.class);

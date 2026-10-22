@@ -38,26 +38,26 @@ class FailureEvidenceTest {
 
     @Test
     void aFailingTestLeavesAScreenshotOfEachTabAndAPassingOneNothing() throws IOException {
-        run("off", PassesAndFails.class);
+        run("off", PassesAndFailsTest.class);
 
-        String dir = PassesAndFails.class.getName();
+        String dir = PassesAndFailsTest.class.getName();
         assertEquals(List.of(dir + "/fails-tab2.png", dir + "/fails.png"), evidence());
         assertTrue(Files.size(evidenceDir.resolve(dir + "/fails.png")) > 0);
     }
 
     @Test
     void aTraceIsKeptForAFailingTestWhenConfigured() throws IOException {
-        run("on-failure", PassesAndFails.class);
+        run("on-failure", PassesAndFailsTest.class);
 
-        String dir = PassesAndFails.class.getName();
+        String dir = PassesAndFailsTest.class.getName();
         assertEquals(List.of(dir + "/fails-tab2.png", dir + "/fails-trace.zip", dir + "/fails.png"), evidence());
     }
 
     @Test
     void repeatedInvocationsOfAMethodKeepTheirOwnEvidence() throws IOException {
-        run("off", FailsTwice.class);
+        run("off", FailsTwiceTest.class);
 
-        String dir = FailsTwice.class.getName();
+        String dir = FailsTwiceTest.class.getName();
         assertEquals(List.of(dir + "/failsTwice-2.png", dir + "/failsTwice.png"), evidence());
     }
 
@@ -88,7 +88,7 @@ class FailureEvidenceTest {
         }
     }
 
-    public static class PassesAndFails extends BaseUiTest {
+    public static class PassesAndFailsTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void passes() {
             open(AnyPage.class);
@@ -102,7 +102,7 @@ class FailureEvidenceTest {
         }
     }
 
-    public static class FailsTwice extends BaseUiTest {
+    public static class FailsTwiceTest extends BaseUiTest {
         @org.testng.annotations.Test(invocationCount = 2)
         public void failsTwice() {
             open(AnyPage.class);

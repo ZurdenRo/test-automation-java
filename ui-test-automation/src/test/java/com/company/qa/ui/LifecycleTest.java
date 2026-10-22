@@ -30,22 +30,22 @@ class LifecycleTest {
     @Test
     void eachTestMethodGetsAFreshBrowserContext() {
         ConsumerRun.in(classpathDir).config("base.url", site.url())
-                .run(LeavesACookieBehind.class)
+                .run(LeavesACookieBehindTest.class)
                 .assertAllPassed();
     }
 
     @Test
     void aSecondSuiteInTheSameJvmLaunchesItsOwnBrowser() {
         ConsumerRun run = ConsumerRun.in(classpathDir).config("base.url", site.url());
-        run.run(LeavesACookieBehind.class).assertAllPassed();
-        run.run(LeavesACookieBehind.class).assertAllPassed();
+        run.run(LeavesACookieBehindTest.class).assertAllPassed();
+        run.run(LeavesACookieBehindTest.class).assertAllPassed();
     }
 
     @Test
     void parallelMethodsEachGetTheirOwnContext() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("base.url", site.url())
                 .parallelMethods()
-                .run(SetsItsOwnCookie.class)
+                .run(SetsItsOwnCookieTest.class)
                 .assertAllPassed();
 
         assertEquals(results.passed().size(), 4);
@@ -70,7 +70,7 @@ class LifecycleTest {
         }
     }
 
-    public static class LeavesACookieBehind extends BaseUiTest {
+    public static class LeavesACookieBehindTest extends BaseUiTest {
         @org.testng.annotations.Test(priority = 1)
         public void setsACookie() {
             CookiePage page = open(CookiePage.class);
@@ -84,7 +84,7 @@ class LifecycleTest {
         }
     }
 
-    public static class SetsItsOwnCookie extends BaseUiTest {
+    public static class SetsItsOwnCookieTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void first() throws InterruptedException {
             remembersOnly("first");
