@@ -6,6 +6,7 @@ import java.nio.file.Path;
 final class UiConfig {
 
     private final UiConfigLoader loader;
+    private final String environment;
     private final String browser;
     private final String channel;
     private final boolean headless;
@@ -16,9 +17,11 @@ final class UiConfig {
     private final Path evidenceDir;
     private final boolean traceOnFailure;
 
-    UiConfig(UiConfigLoader loader, String browser, String channel, boolean headless, int timeoutMs,
-             int viewportWidth, int viewportHeight, int slowMoMs, Path evidenceDir, boolean traceOnFailure) {
+    UiConfig(UiConfigLoader loader, String environment, String browser, String channel, boolean headless,
+             int timeoutMs, int viewportWidth, int viewportHeight, int slowMoMs, Path evidenceDir,
+             boolean traceOnFailure) {
         this.loader = loader;
+        this.environment = environment;
         this.browser = browser;
         this.channel = channel;
         this.headless = headless;
@@ -38,6 +41,11 @@ final class UiConfig {
     /** A secret by its name in {@code secret.<name>}, read from the environment variable the file names. */
     String secret(String name) {
         return loader.secret(name);
+    }
+
+    /** The suite's environment, qa unless {@code <parameter> env} names another. */
+    String environment() {
+        return environment;
     }
 
     /** chromium, firefox or webkit. */

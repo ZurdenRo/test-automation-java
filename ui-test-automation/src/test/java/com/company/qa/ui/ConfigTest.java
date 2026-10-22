@@ -70,12 +70,18 @@ class ConfigTest {
     }
 
     @Test
-    void theSuiteNamesTheFileOfItsEnvironment() throws Exception {
+    void theDefaultEnvironmentIsQa() throws Exception {
+        assertEquals("qa", load("", Map.of()).environment());
+    }
+
+    @Test
+    void theSuiteNamesItsEnvironmentAndItsFileFollows() throws Exception {
         write("ui-test-qa.properties", "app.shop.url=http://qa\n");
         write("ui-test-staging.properties", "app.shop.url=http://staging\n");
 
-        UiConfig config = UiConfigLoader.load(Map.of("ui.config", "ui-test-staging.properties"));
+        UiConfig config = UiConfigLoader.load(Map.of("env", "staging"));
 
+        assertEquals("staging", config.environment());
         assertEquals("http://staging", config.appUrl("shop", "HomePage"));
     }
 
@@ -141,13 +147,13 @@ class ConfigTest {
     }
 
     @Test
-    void aMissingConfigResourceSaysWhichSuiteParameterNamesIt() {
+    void aMissingConfigResourceSaysWhichEnvironmentNeedsIt() {
         Thread.currentThread().setContextClassLoader(classLoader());
 
         UiConfigException e = assertThrows(UiConfigException.class,
-                () -> UiConfigLoader.load(Map.of("ui.config", "ui-test-prod.properties")));
+                () -> UiConfigLoader.load(Map.of("env", "prod")));
 
-        assertEquals("Config resource 'ui-test-prod.properties' (from <parameter> ui.config) not found on the"
+        assertEquals("Config resource 'ui-test-prod.properties' (for <parameter> env 'prod') not found on the"
                 + " classpath", e.getMessage());
     }
 
@@ -157,8 +163,8 @@ class ConfigTest {
 
         UiConfigException e = assertThrows(UiConfigException.class, () -> UiConfigLoader.load(Map.of()));
 
-        assertEquals("Config resource 'ui-test-qa.properties' (the default; name another with <parameter>"
-                + " ui.config) not found on the classpath", e.getMessage());
+        assertEquals("Config resource 'ui-test-qa.properties' (for env 'qa', the default; name another with"
+                + " <parameter> env) not found on the classpath", e.getMessage());
     }
 
     private UiConfig load(String file, Map<String, String> xmlParameters) throws IOException {

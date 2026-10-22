@@ -48,6 +48,16 @@ public abstract class BaseUiTest {
     }
 
     /**
+     * The suite's environment: {@code qa} unless {@code <parameter name="env">} names another. Its settings come from
+     * {@code ui-test-<env>.properties}; a service client can name its own file the same way, such as
+     * {@code new UsersClient(environment())} reading {@code users-service-<env>.properties}, so one parameter moves
+     * the whole test.
+     */
+    protected String environment() {
+        return session.get().environment();
+    }
+
+    /**
      * A secret (a user, a password, a key) by name: {@code secret("admin.password")} reads the environment variable
      * that {@code secret.admin.password} names in the environment's config file, so the test is the same in every
      * environment. Pass it to the page object; never log it.

@@ -109,16 +109,34 @@ A test moves between apps by opening their pages, in one tab or in several. Sinc
 
 ## Configuration
 
-Settings live in one `.properties` file per environment on the test classpath (`src/test/resources`). `ui-test-qa.properties` is the default; a suite names its environment's file with the `ui.config` parameter:
+Settings live in one `.properties` file per environment on the test classpath (`src/test/resources`), named `ui-test-<env>.properties`. A suite names its environment with the `env` parameter; without it the environment is `qa`:
 
 ```xml
 <suite name="checkout-staging">
-  <parameter name="ui.config" value="ui-test-staging.properties"/>
+  <parameter name="env" value="staging"/>   <!-- reads ui-test-staging.properties -->
   <test name="checkout"><classes>...</classes></test>
 </suite>
 ```
 
 So each suite xml points at one environment, and CI picks the environment by picking the xml.
+
+A test that also calls services passes the same environment to their clients, so one parameter moves the whole test:
+
+```java
+public class UsersClient extends HttpServiceClient {
+    public UsersClient(String env) {
+        super("users-service-" + env + ".properties");
+    }
+}
+```
+
+```java
+UsersClient users = new UsersClient(environment());
+```
+
+### Running from the IDE
+
+Running a test or class with the IDE's run button works the same: the IDE builds a suite of its own, without parameters, so the test runs on `qa`. To run on another environment, add `env` = `staging` under **Parameters** in the TestNG run configuration, and save it to reuse. An IDE started from a desktop launcher does not see variables exported in a shell profile: set the secrets in the run configuration's environment variables, or start the IDE from a shell that has them.
 
 For each setting, the first value found wins:
 

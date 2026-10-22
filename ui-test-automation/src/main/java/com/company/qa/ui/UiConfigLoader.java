@@ -29,8 +29,8 @@ final class UiConfigLoader {
     static final String EVIDENCE_DIR = "evidence.dir";
     static final String TRACE = "trace";
 
-    static final String CONFIG = "ui.config";
-    static final String DEFAULT_CONFIG_RESOURCE = "ui-test-qa.properties";
+    static final String ENV = "env";
+    static final String DEFAULT_ENV = "qa";
     private static final Set<String> XML_SETTINGS = Set.of(BROWSER, CHANNEL, HEADLESS, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     private static final List<String> BROWSERS = List.of("chromium", "firefox", "webkit");
     private static final List<String> CHANNELS = List.of("chrome", "msedge");
@@ -51,7 +51,8 @@ final class UiConfigLoader {
 
     /**
      * @param xmlParameters the {@code <parameter>}s of the TestNG {@code <test>} running, its suite's included;
-     *                      {@code ui.config} among them names the config resource of the suite's environment
+     *                      {@code env} among them names the suite's environment, whose config resource is
+     *                      {@code ui-test-<env>.properties}
      */
     static UiConfig load(Map<String, String> xmlParameters) {
         return load(xmlParameters, System.getenv());
@@ -59,12 +60,13 @@ final class UiConfigLoader {
 
     /** @param env where secrets are read from, and nothing else */
     static UiConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
-        String named = xmlParameters.get(CONFIG);
-        String resource = isPresent(named) ? named.trim() : DEFAULT_CONFIG_RESOURCE;
-        String origin = isPresent(named) ? "from <parameter> " + CONFIG
-                : "the default; name another with <parameter> " + CONFIG;
+        String named = xmlParameters.get(ENV);
+        String environment = isPresent(named) ? named.trim() : DEFAULT_ENV;
+        String resource = "ui-test-" + environment + ".properties";
+        String origin = isPresent(named) ? "for <parameter> " + ENV + " '" + environment + "'"
+                : "for env '" + environment + "', the default; name another with <parameter> " + ENV;
         UiConfigLoader loader = new UiConfigLoader(resource, xmlParameters, env, read(resource, origin));
-        return new UiConfig(loader,
+        return new UiConfig(loader, environment,
                 loader.oneOf(BROWSER, BROWSERS, "chromium", " or "),
                 loader.oneOf(CHANNEL, CHANNELS, null, " or "),
                 loader.booleanValue(HEADLESS, true),

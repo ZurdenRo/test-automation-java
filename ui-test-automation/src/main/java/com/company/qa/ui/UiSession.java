@@ -82,6 +82,10 @@ final class UiSession {
         return pageObject;
     }
 
+    String environment() {
+        return config.environment();
+    }
+
     String secret(String name) {
         return config.secret(name);
     }
