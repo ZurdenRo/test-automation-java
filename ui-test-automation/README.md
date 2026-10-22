@@ -197,7 +197,29 @@ env:
 
 ## Failure evidence
 
-When a test fails, the library saves a screenshot of each tab, and the trace if `trace=on-failure`, to `<evidence.dir>/<test class>/<method>.png` (`-tab2.png`, `-trace.zip`). The paths go to the TestNG report. Open a trace with `npx playwright show-trace <file>` or at trace.playwright.dev.
+When a test fails, the library saves a screenshot of each tab, and the trace if `trace=on-failure`, to `<evidence.dir>/<test class>/<method>.png` (`-tab2.png`, `-trace.zip`). The paths go to the TestNG report and the log. Open a trace with `npx playwright show-trace <file>` or at trace.playwright.dev.
+
+## Logging
+
+The library logs through SLF4J under `com.company.qa.ui`. TestNG already brings SLF4J; add a backend to see the logs, such as `ch.qos.logback:logback-classic` as a test dependency. Without one, SLF4J prints a single warning and the logs are dropped.
+
+| Level | What |
+|---|---|
+| `WARN` | A suite still setting `ui.config`, which `env` replaced: it runs on the default environment. |
+| `INFO` | The environment and file each `<test>` runs on; each browser launched; failure evidence paths. |
+| `DEBUG` | The settings each test method resolved; each page opened, with its URL; the variable each secret was read from. |
+
+Secret values are never logged, at any level. `src/test/resources/logback-test.xml` to see the `DEBUG` lines:
+
+```xml
+<configuration>
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder><pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{0} - %msg%n</pattern></encoder>
+  </appender>
+  <logger name="com.company.qa.ui" level="DEBUG"/>
+  <root level="INFO"><appender-ref ref="console"/></root>
+</configuration>
+```
 
 ## Browsers
 

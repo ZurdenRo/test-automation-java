@@ -7,6 +7,8 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.Tracing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -25,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class UiSession {
 
+    private static final Logger LOG = LoggerFactory.getLogger(UiSession.class);
     private static final ThreadLocal<Launched> BROWSER = new ThreadLocal<>();
     private static final List<Playwright> LAUNCHED = new CopyOnWriteArrayList<>();
     // Bumped when browsers are closed, so a thread does not reuse one closed by an earlier suite in the same JVM.
@@ -78,7 +81,9 @@ final class UiSession {
                     + " app.<name>.url it lives under");
         }
         String path = PagePath.fill(name, template, parameters);
-        tab.navigate(join(config.appUrl(app, name), path));
+        String url = join(config.appUrl(app, name), path);
+        LOG.debug("Opening {} at {}{}", name, url, newTab ? " in a new tab" : "");
+        tab.navigate(url);
         return pageObject;
     }
 
@@ -155,11 +160,15 @@ final class UiSession {
         }
         String kind = config.browser() + "/" + config.channel() + "/" + config.headless() + "/" + config.slowMoMs();
         Playwright playwright = launched.playwright;
-        return launched.browsers.computeIfAbsent(kind, k -> type(playwright, config.browser())
-                .launch(new BrowserType.LaunchOptions()
-                        .setChannel(config.channel())
-                        .setHeadless(config.headless())
-                        .setSlowMo(config.slowMoMs())));
+        return launched.browsers.computeIfAbsent(kind, k -> {
+            LOG.info("Launching {}{} ({}) on thread {}", config.browser(),
+                    config.channel() == null ? "" : " channel " + config.channel(),
+                    config.headless() ? "headless" : "headed", Thread.currentThread().getName());
+            return type(playwright, config.browser()).launch(new BrowserType.LaunchOptions()
+                    .setChannel(config.channel())
+                    .setHeadless(config.headless())
+                    .setSlowMo(config.slowMoMs()));
+        });
     }
 
     private static BrowserType type(Playwright playwright, String browser) {

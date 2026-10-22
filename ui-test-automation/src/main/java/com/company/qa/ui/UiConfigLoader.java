@@ -1,5 +1,8 @@
 package com.company.qa.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,6 +34,8 @@ final class UiConfigLoader {
 
     static final String ENV = "env";
     static final String DEFAULT_ENV = "qa";
+    private static final String RETIRED_CONFIG = "ui.config";
+    private static final Logger LOG = LoggerFactory.getLogger(UiConfigLoader.class);
     private static final Set<String> XML_SETTINGS = Set.of(BROWSER, CHANNEL, HEADLESS, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     private static final List<String> BROWSERS = List.of("chromium", "firefox", "webkit");
     private static final List<String> CHANNELS = List.of("chrome", "msedge");
@@ -60,13 +65,12 @@ final class UiConfigLoader {
 
     /** @param env where secrets are read from, and nothing else */
     static UiConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
-        String named = xmlParameters.get(ENV);
-        String environment = isPresent(named) ? named.trim() : DEFAULT_ENV;
-        String resource = "ui-test-" + environment + ".properties";
-        String origin = isPresent(named) ? "for <parameter> " + ENV + " '" + environment + "'"
+        String environment = environment(xmlParameters);
+        String resource = resource(environment);
+        String origin = isPresent(xmlParameters.get(ENV)) ? "for <parameter> " + ENV + " '" + environment + "'"
                 : "for env '" + environment + "', the default; name another with <parameter> " + ENV;
         UiConfigLoader loader = new UiConfigLoader(resource, xmlParameters, env, read(resource, origin));
-        return new UiConfig(loader, environment,
+        UiConfig config = new UiConfig(loader, environment,
                 loader.oneOf(BROWSER, BROWSERS, "chromium", " or "),
                 loader.oneOf(CHANNEL, CHANNELS, null, " or "),
                 loader.booleanValue(HEADLESS, true),
@@ -76,6 +80,34 @@ final class UiConfigLoader {
                 loader.nonNegativeInt(SLOW_MO_MS, 0),
                 Path.of(loader.find(EVIDENCE_DIR).map(s -> s.value).orElse("ui-evidence")),
                 "on-failure".equals(loader.oneOf(TRACE, TRACE_MODES, "off", " or ")));
+        LOG.debug("Settings from {}: browser={}, channel={}, headless={}, viewport={}x{}, timeout.ms={},"
+                        + " slow.mo.ms={}, evidence.dir={}, trace={}", resource, config.browser(), config.channel(),
+                config.headless(), config.viewportWidth(), config.viewportHeight(), config.timeoutMs(),
+                config.slowMoMs(), config.evidenceDir(), config.traceOnFailure() ? "on-failure" : "off");
+        return config;
+    }
+
+    /**
+     * Logs the environment a TestNG {@code <test>} runs on, once, and warns about {@code ui.config}, which
+     * {@code env} replaced: a suite still setting it would otherwise run on the default environment unnoticed.
+     */
+    static void logEnvironment(String testName, Map<String, String> xmlParameters) {
+        String environment = environment(xmlParameters);
+        String retired = xmlParameters.get(RETIRED_CONFIG);
+        if (isPresent(retired)) {
+            LOG.warn("Ignoring <parameter> {} '{}': <parameter> {} replaced it, so <test> '{}' runs on env '{}' ({})",
+                    RETIRED_CONFIG, retired.trim(), ENV, testName, environment, resource(environment));
+        }
+        LOG.info("<test> '{}' runs on env '{}' ({})", testName, environment, resource(environment));
+    }
+
+    private static String environment(Map<String, String> xmlParameters) {
+        String named = xmlParameters.get(ENV);
+        return isPresent(named) ? named.trim() : DEFAULT_ENV;
+    }
+
+    private static String resource(String environment) {
+        return "ui-test-" + environment + ".properties";
     }
 
     /** The base URL of the named app ({@code app.<name>.url}), for the page that needs it. */
@@ -101,6 +133,7 @@ final class UiConfigLoader {
             throw new UiConfigException("Secret '" + name + "' needs environment variable " + variable.trim()
                     + ", which is not set (blank values count as missing; " + resource + " names it)");
         }
+        LOG.debug("Secret '{}' read from environment variable {}", name, variable.trim());
         return value;
     }
 
