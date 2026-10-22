@@ -42,8 +42,10 @@ final class HttpConfigLoader {
     /**
      * @param resource  classpath resource name, or null when there is no config file
      * @param overrides settings given directly to the builder, by key
+     * @param env       where secrets are read from, and nothing else
      */
-    static HttpConfig load(String resource, Map<String, String> overrides, Headers builderHeaders) {
+    static HttpConfig load(String resource, Map<String, String> overrides, Headers builderHeaders,
+                           Map<String, String> env) {
         Properties file = resource == null ? new Properties() : read(resource);
         HttpConfigLoader loader = new HttpConfigLoader(resource, overrides, file);
 
@@ -56,7 +58,7 @@ final class HttpConfigLoader {
         boolean followRedirects = loader.booleanValue(FOLLOW_REDIRECTS, true);
 
         return new HttpConfig(baseUrl.value, connectTimeout, responseTimeout, maxConnections, followRedirects,
-                loader.fileHeaders().overriddenBy(builderHeaders));
+                loader.fileHeaders().overriddenBy(builderHeaders), new Secrets(resource, file, env));
     }
 
     private Optional<Setting> find(String key) {

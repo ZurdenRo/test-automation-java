@@ -9,15 +9,17 @@ final class HttpConfig {
     final int maxConnections;
     final boolean followRedirects;
     final Headers defaultHeaders;
+    final Secrets secrets;
 
     HttpConfig(String baseUrl, int connectTimeoutMs, int responseTimeoutMs, int maxConnections,
-               boolean followRedirects, Headers defaultHeaders) {
+               boolean followRedirects, Headers defaultHeaders, Secrets secrets) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutMs = responseTimeoutMs;
         this.maxConnections = maxConnections;
         this.followRedirects = followRedirects;
         this.defaultHeaders = defaultHeaders;
+        this.secrets = secrets;
     }
 
     /** The base URL and {@code path} joined with exactly one slash, whether or not the path starts with one. */

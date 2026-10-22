@@ -28,6 +28,10 @@ _Avoid_: Payload, entity
 A `.properties` resource in the consumer's classpath, named by the consumer, holding one transport's settings. A consumer with several services has several.
 _Avoid_: Settings file, client config
 
+**Secret**:
+A token, user or password a service client needs. It lives only in an environment variable; the service config holds the variable's name, never the value.
+_Avoid_: Credential, sensitive setting
+
 **Response**:
 What came back from the server, whatever its status. A 404 is a response, not a failure.
 _Avoid_: Result, reply

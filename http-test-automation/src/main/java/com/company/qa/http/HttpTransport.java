@@ -151,6 +151,11 @@ final class HttpTransport implements Closeable {
         return all.isEmpty() ? requested : all.get(all.size() - 1);
     }
 
+    /** A secret by its name in {@code secret.<name>}, read from the environment variable the service config names. */
+    String secret(String name) {
+        return config.secrets.get(name);
+    }
+
     @Override
     public void close() {
         closed = true;
