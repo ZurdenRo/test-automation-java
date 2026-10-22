@@ -8,4 +8,4 @@ A library that ships a backend fights the consumer's own; `java.lang.System.Logg
 
 - A consumer with no backend sees one SLF4J warning and no logs; the README says what to add.
 - The module's own tests use Logback, test-scoped, and assert on log lines with a `ListAppender`.
-- ui-test-automation logs first; http-test-automation follows once its open configuration changes land.
+- Anything that may hold a secret is logged by name only: secrets by their variable, headers by name, query parameters with their values elided.

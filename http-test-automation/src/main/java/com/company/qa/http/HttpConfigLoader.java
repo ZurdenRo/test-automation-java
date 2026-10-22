@@ -1,5 +1,8 @@
 package com.company.qa.http;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,6 +32,8 @@ final class HttpConfigLoader {
     private static final int DEFAULT_RESPONSE_TIMEOUT_MS = 30_000;
     private static final int DEFAULT_MAX_CONNECTIONS = 20;
 
+    private static final Logger LOG = LoggerFactory.getLogger(HttpConfigLoader.class);
+
     private final String resource;
     private final Map<String, String> overrides;
     private final Properties file;
@@ -57,8 +62,15 @@ final class HttpConfigLoader {
         int maxConnections = loader.positiveInt(MAX_CONNECTIONS, DEFAULT_MAX_CONNECTIONS);
         boolean followRedirects = loader.booleanValue(FOLLOW_REDIRECTS, true);
 
+        Headers headers = loader.fileHeaders().overriddenBy(builderHeaders);
+
+        LOG.info("Service client on {} (base.url from {})", baseUrl.value, baseUrl.source);
+        // Header names only: a value may be a token.
+        LOG.debug("Settings: connect.timeout.ms={}, response.timeout.ms={}, max.connections={}, follow.redirects={},"
+                + " default headers {}", connectTimeout, responseTimeout, maxConnections, followRedirects,
+                headers.names());
         return new HttpConfig(baseUrl.value, connectTimeout, responseTimeout, maxConnections, followRedirects,
-                loader.fileHeaders().overriddenBy(builderHeaders), new Secrets(resource, file, env));
+                headers, new Secrets(resource, file, env));
     }
 
     private Optional<Setting> find(String key) {

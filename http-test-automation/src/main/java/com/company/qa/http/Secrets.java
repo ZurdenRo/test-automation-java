@@ -1,5 +1,8 @@
 package com.company.qa.http;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.Properties;
 
@@ -11,6 +14,7 @@ import java.util.Properties;
 final class Secrets {
 
     private static final String PREFIX = "secret.";
+    private static final Logger LOG = LoggerFactory.getLogger(Secrets.class);
 
     private final String resource;
     private final Properties file;
@@ -40,6 +44,7 @@ final class Secrets {
                     + ", which is not set (blank values count as missing; service config '" + resource
                     + "' names it)");
         }
+        LOG.debug("Secret '{}' read from environment variable {}", name, variable.trim());
         return value;
     }
 
