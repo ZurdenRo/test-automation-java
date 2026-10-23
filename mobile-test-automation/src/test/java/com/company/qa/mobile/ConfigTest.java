@@ -37,16 +37,16 @@ class ConfigTest {
 
         assertEquals("qa", config.environment());
         assertEquals(Platform.ANDROID, config.platform());
-        assertEquals(10_000, config.waitTimeoutMs());
+        assertEquals(10_000, config.waitUntilTimeoutMs());
     }
 
     @Test
     void theFileSetsEverySetting() throws Exception {
-        MobileConfig config = load("appium.server.url=https://farm.example:443/wd/hub\nwait.timeout.ms=500\n"
+        MobileConfig config = load("appium.server.url=https://farm.example:443/wd/hub\nwait.until.timeout.ms=500\n"
                 + "android.app=/apps/shop.apk\nandroid.devices= emulator-5554 , emulator-5556 ,\n", Map.of());
 
         assertEquals("https://farm.example:443/wd/hub", config.appiumServerUrl().toString());
-        assertEquals(500, config.waitTimeoutMs());
+        assertEquals(500, config.waitUntilTimeoutMs());
         assertEquals("/apps/shop.apk", config.app());
         assertNull(config.appPackage());
         assertEquals(List.of("emulator-5554", "emulator-5556"), config.devices());
@@ -155,26 +155,26 @@ class ConfigTest {
     @Test
     void aNonNumericWaitTimeoutSaysWhereItCameFrom() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL + "wait.timeout.ms=soon\n", Map.of()));
+                () -> load(MINIMAL + "wait.until.timeout.ms=soon\n", Map.of()));
 
-        assertEquals("'wait.timeout.ms' from mobile-test-qa.properties is 'soon': expected a positive whole number",
+        assertEquals("'wait.until.timeout.ms' from mobile-test-qa.properties is 'soon': expected a positive whole number",
                 e.getMessage());
     }
 
     @Test
     void aZeroWaitTimeoutIsRejected() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL + "wait.timeout.ms=0\n", Map.of()));
+                () -> load(MINIMAL + "wait.until.timeout.ms=0\n", Map.of()));
 
-        assertEquals("'wait.timeout.ms' from mobile-test-qa.properties is '0': expected a positive whole number",
+        assertEquals("'wait.until.timeout.ms' from mobile-test-qa.properties is '0': expected a positive whole number",
                 e.getMessage());
     }
 
     @Test
     void xmlParametersOtherThanEnvAndPlatformAreIgnored() throws Exception {
-        MobileConfig config = load(MINIMAL, Map.of("wait.timeout.ms", "900", "appium.server.url", "http://xml"));
+        MobileConfig config = load(MINIMAL, Map.of("wait.until.timeout.ms", "900", "appium.server.url", "http://xml"));
 
-        assertEquals(10_000, config.waitTimeoutMs());
+        assertEquals(10_000, config.waitUntilTimeoutMs());
         assertEquals("http://localhost:4723", config.appiumServerUrl().toString());
     }
 

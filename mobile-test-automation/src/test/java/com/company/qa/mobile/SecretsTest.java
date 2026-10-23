@@ -77,10 +77,10 @@ class SecretsTest {
         write("mobile-test-qa.properties", BASE);
 
         MobileConfig config = MobileConfigLoader.load(Map.of(),
-                Map.of("APPIUM_SERVER_URL", "http://evil:4723", "QA_MOBILE_WAIT_TIMEOUT_MS", "1"));
+                Map.of("APPIUM_SERVER_URL", "http://evil:4723", "QA_MOBILE_WAIT_UNTIL_TIMEOUT_MS", "1"));
 
         assertEquals("http://localhost:4723", config.appiumServerUrl().toString());
-        assertEquals(10_000, config.waitTimeoutMs());
+        assertEquals(10_000, config.waitUntilTimeoutMs());
     }
 
     private void write(String name, String content) throws IOException {

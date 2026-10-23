@@ -28,7 +28,7 @@ import java.util.Properties;
 final class MobileConfigLoader {
 
     static final String APPIUM_SERVER_URL = "appium.server.url";
-    static final String WAIT_TIMEOUT_MS = "wait.timeout.ms";
+    static final String WAIT_UNTIL_TIMEOUT_MS = "wait.until.timeout.ms";
     static final String APP = "app";
     static final String APP_PACKAGE = "app.package";
     static final String DEVICES = "devices";
@@ -82,10 +82,10 @@ final class MobileConfigLoader {
         }
         MobileConfig config = new MobileConfig(loader, environment, platform,
                 loader.serverUrl(APPIUM_SERVER_URL),
-                loader.positiveInt(WAIT_TIMEOUT_MS, 10_000),
+                loader.positiveInt(WAIT_UNTIL_TIMEOUT_MS, 10_000),
                 app, appPackage, loader.serials(prefix + DEVICES));
-        LOG.debug("Settings from {}: platform={}, appium.server.url={}, wait.timeout.ms={}, app={}, app.package={},"
-                        + " devices={}", resource, platform.key(), config.appiumServerUrl(), config.waitTimeoutMs(),
+        LOG.debug("Settings from {}: platform={}, appium.server.url={}, wait.until.timeout.ms={}, app={}, app.package={},"
+                        + " devices={}", resource, platform.key(), config.appiumServerUrl(), config.waitUntilTimeoutMs(),
                 config.app(), config.appPackage(), config.devices());
         return config;
     }

@@ -10,18 +10,18 @@ final class MobileConfig {
     private final String environment;
     private final Platform platform;
     private final URI appiumServerUrl;
-    private final int waitTimeoutMs;
+    private final int waitUntilTimeoutMs;
     private final String app;
     private final String appPackage;
     private final List<String> devices;
 
     MobileConfig(MobileConfigLoader loader, String environment, Platform platform, URI appiumServerUrl,
-                 int waitTimeoutMs, String app, String appPackage, List<String> devices) {
+                 int waitUntilTimeoutMs, String app, String appPackage, List<String> devices) {
         this.loader = loader;
         this.environment = environment;
         this.platform = platform;
         this.appiumServerUrl = appiumServerUrl;
-        this.waitTimeoutMs = waitTimeoutMs;
+        this.waitUntilTimeoutMs = waitUntilTimeoutMs;
         this.app = app;
         this.appPackage = appPackage;
         this.devices = devices;
@@ -48,8 +48,8 @@ final class MobileConfig {
     }
 
     /** How long a screen's {@code waitUntil} waits before failing; the implicit wait stays at 0 (ADR-0002). */
-    int waitTimeoutMs() {
-        return waitTimeoutMs;
+    int waitUntilTimeoutMs() {
+        return waitUntilTimeoutMs;
     }
 
     /** The APK to install, as the Appium server resolves it (a path where it runs, or a URL); null if the app is installed. */
