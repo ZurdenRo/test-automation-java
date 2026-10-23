@@ -4,5 +4,6 @@ Each module is its own context, with its own language and decisions. Decisions t
 
 - **HTTP test automation**: `http-test-automation/CONTEXT.md`, decisions in `http-test-automation/docs/adr/`. A library for talking to HTTP services from tests.
 - **UI test automation**: `ui-test-automation/CONTEXT.md`, decisions in `ui-test-automation/docs/adr/`. A library for driving web applications from tests, built on Playwright.
+- **Mobile test automation**: `mobile-test-automation/CONTEXT.md`, decisions in `mobile-test-automation/docs/adr/`. A library for driving mobile applications from tests, built on Appium. Android first.
 
 The contexts share configuration conventions, not code: settings come from `.properties` resources, and environment variables hold secrets only (`docs/adr/0001`).
