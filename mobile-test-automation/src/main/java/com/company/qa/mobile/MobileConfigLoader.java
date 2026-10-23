@@ -29,6 +29,7 @@ final class MobileConfigLoader {
 
     static final String APPIUM_SERVER_URL = "appium.server.url";
     static final String WAIT_UNTIL_TIMEOUT_MS = "wait.until.timeout.ms";
+    static final String DEVICE_WAIT_TIMEOUT_MS = "device.wait.timeout.ms";
     static final String APP = "app";
     static final String APP_PACKAGE = "app.package";
     static final String DEVICES = "devices";
@@ -83,11 +84,19 @@ final class MobileConfigLoader {
         MobileConfig config = new MobileConfig(loader, environment, platform,
                 loader.serverUrl(APPIUM_SERVER_URL),
                 loader.positiveInt(WAIT_UNTIL_TIMEOUT_MS, 10_000),
+                loader.positiveInt(DEVICE_WAIT_TIMEOUT_MS, 600_000),
                 app, appPackage, loader.serials(prefix + DEVICES));
-        LOG.debug("Settings from {}: platform={}, appium.server.url={}, wait.until.timeout.ms={}, app={}, app.package={},"
-                        + " devices={}", resource, platform.key(), config.appiumServerUrl(), config.waitUntilTimeoutMs(),
-                config.app(), config.appPackage(), config.devices());
+        LOG.debug("Settings from {}: platform={}, appium.server.url={}, wait.until.timeout.ms={}, device.wait.timeout.ms={},"
+                        + " app={}, app.package={}, devices={}", resource, platform.key(), config.appiumServerUrl(), config.waitUntilTimeoutMs(),
+                config.deviceWaitTimeoutMs(), config.app(), config.appPackage(), config.devices());
         return config;
+    }
+
+    /** Logs the environment and platform a TestNG {@code <test>} runs on, once; a platform not supported fails here. */
+    static void logEnvironment(String testName, Map<String, String> xmlParameters) {
+        String environment = environment(xmlParameters);
+        LOG.info("<test> '{}' runs on env '{}' ({}), platform {}", testName, environment, resource(environment),
+                platform(xmlParameters).key());
     }
 
     private static String environment(Map<String, String> xmlParameters) {

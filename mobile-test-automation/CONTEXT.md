@@ -25,7 +25,7 @@ The runner's grouping of test classes and the order they run in (in TestNG, `tes
 _Avoid_: Test class
 
 **Session**:
-What each test method gets, fresh: an Appium session on one device, with the app freshly installed and launched. Nothing a test leaves behind reaches another test.
+What each test method gets, fresh: an Appium session on one device, with the app's data cleared and the app launched. Nothing a test leaves behind reaches another test.
 _Avoid_: Context, run
 
 **Appium server**:
