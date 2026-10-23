@@ -4,7 +4,7 @@ Like ui-test-automation with Playwright (its ADR-0001), and unlike http-test-aut
 
 `BaseScreen` and `BaseComponent` expose `AppiumDriver`, common to both platforms. What only one platform offers (`startActivity`, `pressKey`, UiAutomator selectors) comes through that platform's package: `AndroidScreen extends BaseScreen` exposes `AndroidDriver`. A screen that does not need it stays portable to iOS; one that does says so in its `extends`.
 
-Waits are explicit. The implicit wait stays at 0, and `BaseScreen` and `BaseComponent` offer a protected `waitUntil(...)` over `WebDriverWait`, with the default timeout from `wait.timeout` in the config file. The implicit wait applies to every lookup, so checking that something is *not* there costs a full timeout, and mixing it with explicit waits gives unpredictable total waits.
+Waits are explicit. The implicit wait stays at 0, and `BaseScreen` and `BaseComponent` offer a protected `waitUntil(...)` over `WebDriverWait`, with the default timeout from `wait.until.timeout.ms` in the config file. The implicit wait applies to every lookup, so checking that something is *not* there costs a full timeout, and mixing it with explicit waits gives unpredictable total waits.
 
 ## Consequences
 
