@@ -28,4 +28,4 @@ jobs:
 
     # Builds and runs the tests; the modules are not published for now.
     - name: Build and test
-      run: ./gradlew :http-test-automation:build :ui-test-automation:build
+      run: ./gradlew :http-test-automation:build :ui-test-automation:build :mobile-test-automation:build

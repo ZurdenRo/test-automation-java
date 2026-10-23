@@ -1,5 +1,6 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
 }
 
 group = 'com.company.qa'
@@ -10,10 +11,48 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    // Both are public API: screens use Appium directly (ADR-0002) and mobile tests extend a TestNG class.
+    api libs.appium.java.client
+    api libs.testng
+    // Logs through SLF4J; the consumer's backend (Logback, Log4j) decides levels and where they go.
+    implementation libs.slf4j.api
+    testImplementation libs.junit.jupiter
+    testImplementation libs.logback.classic
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-test {
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.named('test') {
+    // The module's own tests are JUnit; they run consumer-shaped TestNG classes programmatically.
     useJUnitPlatform()
+}
+
+publishing {
+
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.company.qa'
+            artifactId = 'mobile-test-automation'
+
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
+            credentials {
+
+                username = System.getenv("MY_USER")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
