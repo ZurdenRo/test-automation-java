@@ -38,15 +38,17 @@ class ConfigTest {
         assertEquals("qa", config.environment());
         assertEquals(Platform.ANDROID, config.platform());
         assertEquals(10_000, config.waitUntilTimeoutMs());
+        assertEquals(600_000, config.deviceWaitTimeoutMs());
     }
 
     @Test
     void theFileSetsEverySetting() throws Exception {
-        MobileConfig config = load("appium.server.url=https://farm.example:443/wd/hub\nwait.until.timeout.ms=500\n"
+        MobileConfig config = load("appium.server.url=https://farm.example:443/wd/hub\nwait.until.timeout.ms=500\ndevice.wait.timeout.ms=7000\n"
                 + "android.app=/apps/shop.apk\nandroid.devices= emulator-5554 , emulator-5556 ,\n", Map.of());
 
         assertEquals("https://farm.example:443/wd/hub", config.appiumServerUrl().toString());
         assertEquals(500, config.waitUntilTimeoutMs());
+        assertEquals(7000, config.deviceWaitTimeoutMs());
         assertEquals("/apps/shop.apk", config.app());
         assertNull(config.appPackage());
         assertEquals(List.of("emulator-5554", "emulator-5556"), config.devices());
