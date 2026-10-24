@@ -2,12 +2,20 @@ package com.company.qa.mobile;
 
 import com.company.qa.mobile.android.AndroidSessions;
 import io.appium.java_client.AppiumDriver;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.logging.LogEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * One test method's Appium session, knowing no test runner. It takes a device from the pool for as long as it
@@ -76,14 +84,67 @@ final class MobileSession {
                 + " (" + driver.getClass().getSimpleName() + " or a supertype)");
     }
 
-    /** Closes the session and returns its device to the pool, even if closing fails. */
-    void close() {
+    /**
+     * Keeps the failure evidence of a failed test, then closes the session and returns its device to the pool, even
+     * if closing fails. Evidence that cannot be taken (a session the server lost) is skipped, so it never hides why
+     * the test failed.
+     *
+     * @param testClass  names the evidence directory
+     * @param testMethod names the evidence files; a second failure of the same method gets {@code -2}
+     * @return the evidence files kept, none for a test that passed
+     */
+    List<Path> close(String testClass, String testMethod, boolean failed) {
+        List<Path> evidence = new ArrayList<>();
         try {
-            Waits.unregister(driver);
-            quitQuietly(driver, serial);
+            if (failed) {
+                Path stem = unusedStem(config.evidenceDir().resolve(testClass), testMethod);
+                keep(evidence, sibling(stem, ".png"), () -> driver.getScreenshotAs(OutputType.BYTES));
+                keep(evidence, sibling(stem, ".xml"),
+                        () -> driver.getPageSource().getBytes(StandardCharsets.UTF_8));
+                String logType = config.platform().logType();
+                keep(evidence, sibling(stem, "-" + logType + ".txt"), () -> deviceLog(logType));
+            }
         } finally {
-            pool.release(serial);
+            try {
+                Waits.unregister(driver);
+                quitQuietly(driver, serial);
+            } finally {
+                pool.release(serial);
+            }
         }
+        return evidence;
+    }
+
+    /** What the device logged since the session started: the session is the test's, so this is only its lines. */
+    private byte[] deviceLog(String logType) {
+        StringBuilder log = new StringBuilder();
+        for (LogEntry entry : driver.manage().logs().get(logType)) {
+            log.append(entry.getMessage()).append('\n');
+        }
+        return log.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private void keep(List<Path> evidence, Path file, java.util.function.Supplier<byte[]> content) {
+        try {
+            byte[] bytes = content.get();
+            Files.createDirectories(file.getParent());
+            Files.write(file, bytes);
+            evidence.add(file);
+        } catch (RuntimeException | IOException e) {
+            LOG.warn("Could not keep {} on {}: {}", file.getFileName(), serial, firstLine(e.getMessage()));
+        }
+    }
+
+    private static Path unusedStem(Path dir, String testMethod) {
+        Path stem = dir.resolve(testMethod);
+        for (int n = 2; Files.exists(sibling(stem, ".png")) || Files.exists(sibling(stem, ".xml")); n++) {
+            stem = dir.resolve(testMethod + "-" + n);
+        }
+        return stem;
+    }
+
+    private static Path sibling(Path stem, String suffix) {
+        return stem.resolveSibling(stem.getFileName() + suffix);
     }
 
     private static void quitQuietly(AppiumDriver driver, String serial) {

@@ -1,6 +1,7 @@
 package com.company.qa.mobile;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 
 /** The settings of one test method's session, resolved from every source. */
@@ -15,10 +16,11 @@ final class MobileConfig {
     private final String app;
     private final String appPackage;
     private final List<String> devices;
+    private final Path evidenceDir;
 
     MobileConfig(MobileConfigLoader loader, String environment, Platform platform, URI appiumServerUrl,
                  int waitUntilTimeoutMs, int deviceWaitTimeoutMs, String app, String appPackage,
-                 List<String> devices) {
+                 List<String> devices, Path evidenceDir) {
         this.loader = loader;
         this.environment = environment;
         this.platform = platform;
@@ -28,6 +30,7 @@ final class MobileConfig {
         this.app = app;
         this.appPackage = appPackage;
         this.devices = devices;
+        this.evidenceDir = evidenceDir;
     }
 
     /** A secret by its name in {@code secret.<name>}, read from the environment variable the file names. */
@@ -73,5 +76,10 @@ final class MobileConfig {
     /** The serials of the platform's device pool, in the order the file lists them. */
     List<String> devices() {
         return devices;
+    }
+
+    /** Where failure evidence is kept, under a directory per test class. */
+    Path evidenceDir() {
+        return evidenceDir;
     }
 }
