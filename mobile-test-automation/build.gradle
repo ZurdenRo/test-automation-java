@@ -33,6 +33,31 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+// Tests against a real Appium server and device (ADR-0003): they reuse the unit tests' helpers, are not part of
+// `build`, and need the server and an emulator up, as the mobile-integration CI job provides. Locally:
+//   emulator -avd <avd> & appium &    ./gradlew :mobile-test-automation:integrationTest
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs the tests that need an Appium server and a device.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    // Always run: the result depends on the server and the device, which Gradle cannot see.
+    outputs.upToDateWhen { false }
+}
+
 publishing {
 
     publications {

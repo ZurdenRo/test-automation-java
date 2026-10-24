@@ -48,6 +48,18 @@ class EvidenceTest {
         assertEquals(0, appium.sessionsOpen());
     }
 
+    // JDK 11's HttpClient trips its own assert reading a large body when assertions are on (-ea), as Gradle and
+    // Surefire run tests by default; a real screenshot or UI tree is that large.
+    @Test
+    void aLargeUiTreeIsKeptWithAssertionsOn() throws IOException {
+        String large = "<hierarchy>" + "<node text=\"row\"/>".repeat(200_000) + "</hierarchy>";
+        appium.pageSource(large);
+
+        run().run(FailsTest.class);
+
+        assertEquals(large, Files.readString(evidenceDir.resolve(FailsTest.class.getName()).resolve("fails.xml")));
+    }
+
     @Test
     void aPassingTestKeepsNothing() throws IOException {
         run().run(PassesTest.class).assertAllPassed();
