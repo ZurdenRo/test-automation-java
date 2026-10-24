@@ -34,6 +34,14 @@ final class UiContext {
         this.page = context.newPage();
     }
 
+    String environment() {
+        return config.environment();
+    }
+
+    String secret(String name) {
+        return config.secret(name);
+    }
+
     static UiContext start(UiConfig config) {
         BrowserContext context = Browsers.forThread(config).newContext(new Browser.NewContextOptions()
                 .setViewportSize(config.viewportWidth(), config.viewportHeight()));
@@ -68,17 +76,22 @@ final class UiContext {
         return pageObject;
     }
 
-    String environment() {
-        return config.environment();
-    }
-
-    String secret(String name) {
-        return config.secret(name);
-    }
-
     /** The page object for the screen the test's tab shows now, without navigating. */
     <T extends BasePage> T on(Class<T> type) {
         return create(type, page);
+    }
+
+    private static <T extends BasePage> T create(Class<T> type, Page page) {
+        try {
+            Constructor<T> constructor = type.getConstructor(Page.class);
+            return constructor.newInstance(page);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException(type.getSimpleName() + " needs a public constructor taking a Page", e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException("Creating " + type.getSimpleName() + " failed", e.getCause());
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException("Cannot create " + type.getSimpleName(), e);
+        }
     }
 
     /**
@@ -128,18 +141,5 @@ final class UiContext {
 
     private static Path sibling(Path stem, String suffix) {
         return stem.resolveSibling(stem.getFileName() + suffix);
-    }
-
-    private static <T extends BasePage> T create(Class<T> type, Page page) {
-        try {
-            Constructor<T> constructor = type.getConstructor(Page.class);
-            return constructor.newInstance(page);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(type.getSimpleName() + " needs a public constructor taking a Page", e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalStateException("Creating " + type.getSimpleName() + " failed", e.getCause());
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("Cannot create " + type.getSimpleName(), e);
-        }
     }
 }
