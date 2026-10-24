@@ -1,10 +1,16 @@
 package com.company.qa.mobile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,6 +19,8 @@ import java.util.Map;
  * touches the driver.
  */
 public abstract class BaseMobileTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BaseMobileTest.class);
 
     // TestNG shares one instance across threads when it runs methods in parallel.
     private final ThreadLocal<MobileSession> session = new ThreadLocal<>();
@@ -29,12 +37,20 @@ public abstract class BaseMobileTest {
         session.set(MobileSession.start(MobileConfigLoader.load(xmlParameters)));
     }
 
+    /** Keeps the failure evidence of a failed test (logged to the TestNG report), then closes the session. */
     @AfterMethod(alwaysRun = true)
-    public void closeSession() {
+    public void closeSession(ITestResult result) {
         MobileSession current = session.get();
         if (current != null) {
             session.remove();
-            current.close();
+            boolean failed = result.getStatus() == ITestResult.FAILURE;
+            List<Path> evidence = current.close(result.getTestClass().getName(), result.getMethod().getMethodName(),
+                    failed);
+            for (Path file : evidence) {
+                Reporter.log("Failure evidence: " + file.toAbsolutePath());
+                LOG.info("Failure evidence of {}.{}: {}", result.getTestClass().getName(),
+                        result.getMethod().getMethodName(), file.toAbsolutePath());
+            }
         }
     }
 

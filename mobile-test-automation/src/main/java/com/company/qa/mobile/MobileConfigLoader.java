@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +31,7 @@ final class MobileConfigLoader {
     static final String APPIUM_SERVER_URL = "appium.server.url";
     static final String WAIT_UNTIL_TIMEOUT_MS = "wait.until.timeout.ms";
     static final String DEVICE_WAIT_TIMEOUT_MS = "device.wait.timeout.ms";
+    static final String EVIDENCE_DIR = "evidence.dir";
     static final String APP = "app";
     static final String APP_PACKAGE = "app.package";
     static final String DEVICES = "devices";
@@ -85,10 +87,11 @@ final class MobileConfigLoader {
                 loader.serverUrl(APPIUM_SERVER_URL),
                 loader.positiveInt(WAIT_UNTIL_TIMEOUT_MS, 10_000),
                 loader.positiveInt(DEVICE_WAIT_TIMEOUT_MS, 600_000),
-                app, appPackage, loader.serials(prefix + DEVICES));
+                app, appPackage, loader.serials(prefix + DEVICES),
+                Path.of(loader.find(EVIDENCE_DIR).map(s -> s.value).orElse("mobile-evidence")));
         LOG.debug("Settings from {}: platform={}, appium.server.url={}, wait.until.timeout.ms={}, device.wait.timeout.ms={},"
-                        + " app={}, app.package={}, devices={}", resource, platform.key(), config.appiumServerUrl(), config.waitUntilTimeoutMs(),
-                config.deviceWaitTimeoutMs(), config.app(), config.appPackage(), config.devices());
+                        + " app={}, app.package={}, devices={}, evidence.dir={}", resource, platform.key(), config.appiumServerUrl(), config.waitUntilTimeoutMs(),
+                config.deviceWaitTimeoutMs(), config.app(), config.appPackage(), config.devices(), config.evidenceDir());
         return config;
     }
 

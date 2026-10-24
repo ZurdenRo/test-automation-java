@@ -25,6 +25,7 @@ final class FakeAppium implements AutoCloseable {
     private final AtomicInteger maxOpen = new AtomicInteger();
     private final AtomicInteger created = new AtomicInteger();
     private volatile boolean refuseSessions;
+    private volatile boolean refuseEvidence;
 
     FakeAppium() {
         try {
@@ -69,6 +70,18 @@ final class FakeAppium implements AutoCloseable {
         refuseSessions = refuse;
     }
 
+    /** The bytes of the screenshot the server returns, a 1x1 PNG. */
+    static final byte[] SCREENSHOT = java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+    static final String PAGE_SOURCE = "<hierarchy><node text=\"Save\"/></hierarchy>";
+    static final List<String> LOGCAT = List.of("10-24 10:00:00.000 I/Todo(1): started",
+            "10-24 10:00:01.000 E/Todo(1): boom");
+
+    /** Makes the screenshot, page source and log requests fail, as when a session was lost. */
+    void refuseEvidence(boolean refuse) {
+        refuseEvidence = refuse;
+    }
+
     private void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
@@ -89,6 +102,19 @@ final class FakeAppium implements AutoCloseable {
         } else if (method.equals("DELETE") && path.matches("/session/[^/]+")) {
             open.decrementAndGet();
             reply(exchange, 200, "{\"value\":null}");
+        } else if (path.matches("/session/[^/]+/(screenshot|source|se/log)") && refuseEvidence) {
+            reply(exchange, 500, "{\"value\":{\"error\":\"invalid session id\",\"message\":\"gone\",\"stacktrace\":\"\"}}");
+        } else if (method.equals("GET") && path.endsWith("/screenshot")) {
+            reply(exchange, 200, "{\"value\":\"" + java.util.Base64.getEncoder().encodeToString(SCREENSHOT) + "\"}");
+        } else if (method.equals("GET") && path.endsWith("/source")) {
+            reply(exchange, 200, "{\"value\":\"" + PAGE_SOURCE.replace("\"", "\\\"") + "\"}");
+        } else if (method.equals("POST") && path.endsWith("/se/log")) {
+            StringBuilder entries = new StringBuilder();
+            for (String line : LOGCAT) {
+                entries.append(entries.length() == 0 ? "" : ",").append("{\"level\":\"INFO\",\"timestamp\":1,\"message\":\"")
+                        .append(line).append("\"}");
+            }
+            reply(exchange, 200, "{\"value\":[" + entries + "]}");
         } else if (method.equals("POST") && path.endsWith("/element")) {
             reply(exchange, 404, "{\"value\":{\"error\":\"no such element\",\"message\":\"not there\","
                     + "\"stacktrace\":\"\"}}");
