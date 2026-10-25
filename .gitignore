@@ -5,3 +5,6 @@
 build
 **/build# Failure evidence of UI tests
 ui-evidence
+
+# Failure evidence of mobile tests
+mobile-evidence

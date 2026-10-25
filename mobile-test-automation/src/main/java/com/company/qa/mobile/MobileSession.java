@@ -25,6 +25,14 @@ final class MobileSession {
 
     private static final Logger LOG = LoggerFactory.getLogger(MobileSession.class);
 
+    static {
+        // JDK 11's HttpClient, which the Appium client talks through, trips an assert of its own reading a large
+        // body (a screenshot, a UI tree) when assertions are on, as Gradle and Surefire run tests by default. Its
+        // classes are loaded by the platform class loader, so -ea reaches them. Turning them off for that package
+        // only, before the first session loads them, leaves the consumer's own asserts alone. Fixed in JDK 17.
+        ClassLoader.getPlatformClassLoader().setPackageAssertionStatus("jdk.internal.net.http", false);
+    }
+
     private final MobileConfig config;
     private final DevicePool pool;
     private final String serial;
@@ -132,6 +140,7 @@ final class MobileSession {
             evidence.add(file);
         } catch (RuntimeException | IOException e) {
             LOG.warn("Could not keep {} on {}: {}", file.getFileName(), serial, firstLine(e.getMessage()));
+            LOG.debug("Why {} could not be kept", file.getFileName(), e);
         }
     }
 

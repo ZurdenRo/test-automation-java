@@ -26,6 +26,7 @@ final class FakeAppium implements AutoCloseable {
     private final AtomicInteger created = new AtomicInteger();
     private volatile boolean refuseSessions;
     private volatile boolean refuseEvidence;
+    private volatile String pageSource = PAGE_SOURCE;
 
     FakeAppium() {
         try {
@@ -77,6 +78,11 @@ final class FakeAppium implements AutoCloseable {
     static final List<String> LOGCAT = List.of("10-24 10:00:00.000 I/Todo(1): started",
             "10-24 10:00:01.000 E/Todo(1): boom");
 
+    /** The page source the server returns from now on. */
+    void pageSource(String source) {
+        pageSource = source;
+    }
+
     /** Makes the screenshot, page source and log requests fail, as when a session was lost. */
     void refuseEvidence(boolean refuse) {
         refuseEvidence = refuse;
@@ -107,7 +113,7 @@ final class FakeAppium implements AutoCloseable {
         } else if (method.equals("GET") && path.endsWith("/screenshot")) {
             reply(exchange, 200, "{\"value\":\"" + java.util.Base64.getEncoder().encodeToString(SCREENSHOT) + "\"}");
         } else if (method.equals("GET") && path.endsWith("/source")) {
-            reply(exchange, 200, "{\"value\":\"" + PAGE_SOURCE.replace("\"", "\\\"") + "\"}");
+            reply(exchange, 200, "{\"value\":\"" + pageSource.replace("\"", "\\\"") + "\"}");
         } else if (method.equals("POST") && path.endsWith("/se/log")) {
             StringBuilder entries = new StringBuilder();
             for (String line : LOGCAT) {
