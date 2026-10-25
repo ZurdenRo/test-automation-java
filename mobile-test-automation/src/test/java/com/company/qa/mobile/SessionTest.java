@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.IOException;
 import java.net.URL;
@@ -133,6 +134,17 @@ class SessionTest {
     }
 
     @Test
+    void waitUntilTakesSeleniumsExpectedConditions() {
+        appium.elementAppearsAfter(2);
+
+        run().run(ExpectedConditionsTest.class).assertAllPassed();
+
+        assertTrue(appium.requests().stream()
+                        .anyMatch(r -> r.matches("POST /session/[^/]+/element/" + FakeAppium.ELEMENT + "/click")),
+                appium.requests()::toString);
+    }
+
+    @Test
     void aMissingFileForTheEnvironmentFailsTheRunBeforeAnySession() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
                 .suiteParameter("env", "prod")
@@ -224,6 +236,24 @@ class SessionTest {
 
         WebElement waitForSave() {
             return waitUntil(d -> d.findElement(io.appium.java_client.AppiumBy.accessibilityId("Save")));
+        }
+    }
+
+    public static class SaveScreen extends BaseScreen {
+        public SaveScreen(AppiumDriver driver) {
+            super(driver);
+        }
+
+        void save() {
+            waitUntil(ExpectedConditions.elementToBeClickable(io.appium.java_client.AppiumBy.accessibilityId("Save")))
+                    .click();
+        }
+    }
+
+    public static class ExpectedConditionsTest extends BaseMobileTest {
+        @org.testng.annotations.Test
+        public void savesOnceTheButtonShows() {
+            on(SaveScreen.class).save();
         }
     }
 

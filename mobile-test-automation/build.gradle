@@ -11,8 +11,10 @@ repositories {
 }
 
 dependencies {
-    // Both are public API: screens use Appium directly (ADR-0002) and mobile tests extend a TestNG class.
+    // Public API: screens use Appium directly and wait with Selenium's ExpectedConditions (ADR-0002), and mobile
+    // tests extend a TestNG class.
     api libs.appium.java.client
+    api libs.selenium.support
     api libs.testng
     // Logs through SLF4J; the consumer's backend (Logback, Log4j) decides levels and where they go.
     implementation libs.slf4j.api

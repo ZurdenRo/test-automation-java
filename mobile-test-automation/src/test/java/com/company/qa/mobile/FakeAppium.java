@@ -24,6 +24,7 @@ final class FakeAppium implements AutoCloseable {
     private final AtomicInteger open = new AtomicInteger();
     private final AtomicInteger maxOpen = new AtomicInteger();
     private final AtomicInteger created = new AtomicInteger();
+    private final AtomicInteger elementAfterLookups = new AtomicInteger(Integer.MAX_VALUE);
     private volatile boolean refuseSessions;
     private volatile boolean refuseEvidence;
     private volatile String pageSource = PAGE_SOURCE;
@@ -83,6 +84,17 @@ final class FakeAppium implements AutoCloseable {
         pageSource = source;
     }
 
+    /** The id of the one element the server can find, shown and enabled. */
+    static final String ELEMENT = "element-1";
+
+    /**
+     * Element lookups fail with "no such element" this many times, then find {@link #ELEMENT}, as when a view
+     * appears after a while. Until called, no lookup finds anything.
+     */
+    void elementAppearsAfter(int lookups) {
+        elementAfterLookups.set(lookups);
+    }
+
     /** Makes the screenshot, page source and log requests fail, as when a session was lost. */
     void refuseEvidence(boolean refuse) {
         refuseEvidence = refuse;
@@ -121,6 +133,11 @@ final class FakeAppium implements AutoCloseable {
                         .append(line).append("\"}");
             }
             reply(exchange, 200, "{\"value\":[" + entries + "]}");
+        } else if (method.equals("POST") && path.endsWith("/element")
+                && elementAfterLookups.decrementAndGet() < 0) {
+            reply(exchange, 200, "{\"value\":{\"element-6066-11e4-a52e-4f735466cecf\":\"" + ELEMENT + "\"}}");
+        } else if (method.equals("GET") && path.matches("/session/[^/]+/element/" + ELEMENT + "/(displayed|enabled)")) {
+            reply(exchange, 200, "{\"value\":true}");
         } else if (method.equals("POST") && path.endsWith("/element")) {
             reply(exchange, 404, "{\"value\":{\"error\":\"no such element\",\"message\":\"not there\","
                     + "\"stacktrace\":\"\"}}");
