@@ -27,7 +27,8 @@ public abstract class BaseComponent {
 
     /**
      * Waits, polling, until the condition, given the root, returns something truthy and returns it; the same wait
-     * as a screen's {@code waitUntil}.
+     * as a screen's {@code waitUntil}. Selenium's {@code ExpectedConditions} take the driver, not the root, so here
+     * the condition is a lambda: {@code waitUntil(root -> root.findElement(TITLE).getText().equals("Done"))}.
      */
     protected <T> T waitUntil(Function<? super WebElement, T> condition) {
         return Waits.until(driver, d -> condition.apply(root));
