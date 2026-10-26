@@ -1,6 +1,6 @@
 # framework-automation
 
-Gradle multi-project test automation framework: `http-test-automation`, `ui-test-automation`, `performance-test-automation`.
+Gradle multi-project test automation framework, each module a published library: `http-test-automation`, `ui-test-automation` (Playwright), `mobile-test-automation` (Appium).
 
 ## Agent skills
 
