@@ -49,7 +49,7 @@ class EvidenceTest {
     }
 
     // JDK 11's HttpClient trips its own assert reading a large body when assertions are on (-ea), as Gradle and
-    // Surefire run tests by default; a real screenshot or UI tree is that large.
+    // Surefire run tests by default; a real screenshot or UI tree is that large. The reason for Java 17 (ADR-0005).
     @Test
     void aLargeUiTreeIsKeptWithAssertionsOn() throws IOException {
         String large = "<hierarchy>" + "<node text=\"row\"/>".repeat(200_000) + "</hierarchy>";

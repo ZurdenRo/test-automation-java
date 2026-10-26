@@ -8,7 +8,7 @@ The words used here are defined in [CONTEXT.md](CONTEXT.md), and the decisions b
 
 ## Add it to a test project
 
-The library is published to GitHub Packages as `com.company.qa:mobile-test-automation`. It needs Java 11 or later. Appium's Java client, Selenium's `ExpectedConditions` and TestNG come with it, so do not declare them yourself ([ADR-0002](docs/adr/0002-appium-is-part-of-the-public-api.md)).
+The library is published to GitHub Packages as `com.company.qa:mobile-test-automation`. It needs Java 17 or later ([ADR-0005](docs/adr/0005-the-module-needs-java-17.md)). Appium's Java client, Selenium's `ExpectedConditions` and TestNG come with it, so do not declare them yourself ([ADR-0002](docs/adr/0002-appium-is-part-of-the-public-api.md)).
 
 ```groovy
 repositories {
@@ -25,6 +25,12 @@ repositories {
 dependencies {
     testImplementation 'com.company.qa:mobile-test-automation:1.0.0'
     testRuntimeOnly 'ch.qos.logback:logback-classic:1.5.38'   // or any other SLF4J backend
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 test {
