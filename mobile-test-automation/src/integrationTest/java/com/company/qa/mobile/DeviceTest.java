@@ -23,6 +23,7 @@ class DeviceTest {
     // The server downloads it, so the run needs no local file; the version is pinned (Apache-2.0).
     private static final String APP =
             "https://github.com/appium/android-apidemos/releases/download/v6.0.18/ApiDemos-debug.apk";
+    private static final String APP_PACKAGE = "io.appium.android.apis";
 
     @TempDir
     Path classpathDir;
@@ -33,6 +34,22 @@ class DeviceTest {
     @Test
     void eachTestStartsTheAppFromItsFirstScreenOnTheDevice() {
         ConsumerRun.Results results = run().run(NavigatesTest.class);
+
+        results.assertAllPassed();
+        assertEquals(2, results.passed().size());
+    }
+
+    @Test
+    void anAppAlreadyInstalledIsOpenedByItsPackage() {
+        // Installs ApiDemos from the APK first, so this test does not depend on another having run.
+        run().run(NavigatesTest.class).assertAllPassed();
+
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir)
+                .config("appium.server.url", "http://localhost:4723")
+                .config("android.app.package", APP_PACKAGE)
+                .config("android.devices", "emulator-5554")
+                .config("evidence.dir", evidenceDir.toString())
+                .run(NavigatesTest.class);
 
         results.assertAllPassed();
         assertEquals(2, results.passed().size());
