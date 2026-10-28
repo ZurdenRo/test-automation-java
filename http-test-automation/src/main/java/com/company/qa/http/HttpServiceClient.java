@@ -12,9 +12,12 @@ public abstract class HttpServiceClient implements Closeable {
 
     private final HttpTransport transport;
 
-    /** Reads the settings from a {@code .properties} resource on the classpath, named by the consumer. */
-    protected HttpServiceClient(String configResource) {
-        this(new HttpTransportBuilder().configResource(configResource));
+    /**
+     * Reads the settings from {@code services.<service>} in the config of {@code environment}: the suite's
+     * {@code env}, which a UI test gets from {@code environment()}.
+     */
+    protected HttpServiceClient(String service, String environment) {
+        this(new HttpTransportBuilder().service(service, environment));
     }
 
     /** For a client that needs more than a config file: a body codec, an explicit base URL. */
@@ -70,8 +73,8 @@ public abstract class HttpServiceClient implements Closeable {
     }
 
     /**
-     * A secret (a token, a user, a password) by name: {@code secret("api.token")} reads the environment variable that
-     * {@code secret.api.token} names in the service config, so each environment's config can point at its own
+     * A secret (a token, a user, a password) by name: {@code secret("api-token")} reads the environment variable that
+     * {@code secrets.api-token} names in the service's section, so each environment's config can point at its own
      * variable. Use it to build a request; never log it.
      */
     protected String secret(String name) {

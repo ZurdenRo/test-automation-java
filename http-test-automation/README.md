@@ -7,8 +7,8 @@ Talk to an HTTP service from tests through one pooled connection layer. You writ
 ```java
 public class UsersClient extends HttpServiceClient {
 
-    public UsersClient() {
-        super("users-service.properties");   // service config on the classpath
+    public UsersClient(String env) {
+        super("users", env);   // services.users in test-automation-<env>.yaml on the classpath
     }
 
     public HttpResponse getUser(int id) {
@@ -52,29 +52,53 @@ Create one per suite and close it in teardown (or use try-with-resources): it ow
 
 ## Secrets
 
-Tokens, users and passwords live in environment variables, never in a service config. The service config names the variable that holds each secret, and the client asks for it by that name:
+Tokens, users and passwords live in environment variables, never in the config. The service's section names the variable that holds each secret under `secrets`, and the client asks for it by that name:
 
-```properties
-# payments-qa.properties
-base.url=https://payments.qa.example.com
-secret.api.token=PAYMENTS_QA_TOKEN
+```yaml
+# test-automation-qa.yaml
+services:
+  payments:
+    base-url: https://payments.qa.example.com
+    secrets:
+      api-token: PAYMENTS_QA_TOKEN
 ```
 
 ```java
 public HttpResponse getInvoice(int id) {
-    return get(HttpRequest.to("/invoices/" + id).header("Authorization", "Bearer " + secret("api.token")));
+    return get(HttpRequest.to("/invoices/" + id).header("Authorization", "Bearer " + secret("api-token")));
 }
 ```
 
-A config per environment (`payments-dev.properties` with `secret.api.token=PAYMENTS_DEV_TOKEN`) points the same client at that environment's variable. A missing `secret.<name>` key or an unset variable fails the call, naming the key or the variable and never the value.
+The file of another environment (`test-automation-dev.yaml` with `api-token: PAYMENTS_DEV_TOKEN`) points the same client at that environment's variable. A missing `services.<service>.secrets.<name>` key or an unset variable fails the call, naming the key or the variable and never the value.
 
 ## Configuration
 
-Settings come from the service config and `HttpTransportBuilder`; a value given to the builder beats the service config, which beats the default. Environment variables are not read for settings: they are for secrets only (see `docs/adr/0001` at the repository root). Pass a builder to the constructor for anything beyond the config file:
+Settings live in YAML on the test classpath (`src/test/resources`): `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares, each service under `services.<name>`. Other modules read their own sections of the same files. A test passes the suite's environment to the client (`new UsersClient(environment())` in a UI test; the library does not know TestNG).
+
+```yaml
+# test-automation.yaml                      # test-automation-qa.yaml
+services:                                   services:
+  users:                                      users:
+    response-timeout-ms: 60000                  base-url: https://users.qa.example.com
+    headers:
+      Accept: application/json
+```
+
+| Key under `services.<name>` | Default | |
+|---|---|---|
+| `base-url` | | Required, unless the builder gives it. |
+| `connect-timeout-ms` | `10000` | |
+| `response-timeout-ms` | `30000` | |
+| `max-connections` | `20` | |
+| `follow-redirects` | `true` | |
+| `headers.<Name>` | | Sent with every request. |
+| `secrets.<name>` | | The environment variable that holds a secret. |
+
+A value given to `HttpTransportBuilder` beats the file, which beats the default. A key that is not in the table fails the build of the client, naming the key and the file. Environment variables are not read for settings: they are for secrets only (see `docs/adr/0001` at the repository root). Pass a builder to the constructor for anything beyond the config:
 
 ```java
 super(new HttpTransportBuilder()
-        .configResource("users-service.properties")
+        .service("users", env)
         .defaultHeaders(Headers.of("Accept", "application/json"))
         .bodyCodec(myCodec));               // optional: JSON with Jackson by default
 ```
@@ -89,7 +113,7 @@ The library logs through SLF4J under `com.company.qa.http`; add a backend to see
 | `DEBUG` | The settings it resolved, with default header names; each request, with status and time; the variable each secret was read from. |
 
 ```text
-INFO  Service client on https://payments.qa.example.com (base.url from service config 'payments-qa.properties')
+INFO  Service client on https://payments.qa.example.com (base-url from test-automation-qa.yaml)
 DEBUG GET https://payments.qa.example.com/invoices?customer=…&page=… -> 200 in 41 ms
 ```
 
