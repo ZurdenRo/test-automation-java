@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = 'personal-framework-automation'
-include('http-test-automation', 'ui-test-automation', 'mobile-test-automation')
+include('config-loader', 'http-test-automation', 'ui-test-automation', 'mobile-test-automation')

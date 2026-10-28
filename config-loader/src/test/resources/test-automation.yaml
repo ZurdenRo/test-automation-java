@@ -1,0 +1,3 @@
+services:
+  users:
+    response-timeout-ms: 30000
