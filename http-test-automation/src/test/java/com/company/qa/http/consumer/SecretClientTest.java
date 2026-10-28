@@ -29,19 +29,19 @@ class SecretClientTest {
     static class SearchClient extends HttpServiceClient {
 
         SearchClient() {
-            super("search-qa.properties");
+            super("search", "qa");
         }
 
         String searchPath() {
-            return secret("search.path");
+            return secret("search-path");
         }
     }
 
     @Test
     void aServiceClientReadsTheVariableItsServiceConfigNames() throws IOException {
         // PATH is set on every machine, so it stands in for a real secret.
-        Files.writeString(classpathDir.resolve("search-qa.properties"),
-                "base.url=http://127.0.0.1:1\nsecret.search.path=PATH\n");
+        Files.writeString(classpathDir.resolve("test-automation-qa.yaml"),
+                "services:\n  search:\n    base-url: http://127.0.0.1:1\n    secrets:\n      search-path: PATH\n");
         Thread.currentThread().setContextClassLoader(
                 new URLClassLoader(new URL[]{classpathDir.toUri().toURL()}, originalLoader));
 

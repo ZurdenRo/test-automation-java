@@ -31,10 +31,11 @@ class ConfigTest {
     @Test
     void baseUrlAndDefaultHeadersComeFromTheConfigResource() throws Exception {
         try (TestServer server = okServer("payments")) {
-            resource("payments.properties", "base.url=" + server.baseUrl() + "\nheader.X-Env=staging\n");
+            resource("test-automation-qa.yaml", service("payments", "base-url: " + server.baseUrl(), "headers:",
+                    "  X-Env: staging"));
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties").build()) {
+                    .service("payments", "qa").build()) {
                 HttpResponse response = transport.get("/who");
 
                 assertEquals("payments", response.body());
@@ -46,10 +47,11 @@ class ConfigTest {
     @Test
     void builderDefaultHeadersBeatTheHeadersInTheFile() throws Exception {
         try (TestServer server = okServer("payments")) {
-            resource("payments.properties", "base.url=" + server.baseUrl() + "\nheader.X-Env=staging\n");
+            resource("test-automation-qa.yaml", service("payments", "base-url: " + server.baseUrl(), "headers:",
+                    "  X-Env: staging"));
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties")
+                    .service("payments", "qa")
                     .defaultHeaders(Headers.of("x-env", "prod")).build()) {
                 assertEquals("prod", transport.get("/who").headers().first("X-Seen-Env").get());
             }
@@ -62,10 +64,10 @@ class ConfigTest {
     @Test
     void theBuilderBeatsTheFile() throws Exception {
         try (TestServer server = okServer("real")) {
-            resource("payments.properties", "base.url=" + DEAD_URL + "\n");
+            resource("test-automation-qa.yaml", service("payments", "base-url: " + DEAD_URL));
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("payments.properties").baseUrl(server.baseUrl()).build()) {
+                    .service("payments", "qa").baseUrl(server.baseUrl()).build()) {
                 assertEquals("real", transport.get("/who").body());
             }
         }
@@ -78,32 +80,59 @@ class ConfigTest {
                     ex.getResponseHeaders().add("Location", "/new");
                     TestServer.respond(ex, 302, "");
                 }).start()) {
-            resource("svc.properties", "base.url=" + server.baseUrl() + "\nfollow.redirects=false\n");
+            resource("test-automation-qa.yaml", service("svc", "base-url: " + server.baseUrl(), "follow-redirects: false"));
 
             try (HttpTransport transport = new HttpTransportBuilder()
-                    .configResource("svc.properties").build()) {
+                    .service("svc", "qa").build()) {
                 assertEquals(302, transport.get("/old").status());
             }
         }
     }
 
     @Test
-    void missingResourceFailsAtBuildNamingTheResource() {
+    void aMissingEnvironmentFileFailsAtBuildNamingItAndTheClientThatNeedsIt() {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("absent.properties").build());
+                new HttpTransportBuilder().service("payments", "absent").build());
 
-        assertTrue(e.getMessage().contains("absent.properties"), e.getMessage());
+        assertEquals("Config file 'test-automation-absent.yaml' (needed by service client 'payments') not found on"
+                + " the classpath", e.getMessage());
     }
 
     @Test
     void missingBaseUrlFailsAtBuildNamingTheKeyAndEveryPlaceItWasLookedFor() throws Exception {
-        resource("payments.properties", "follow.redirects=true\n");
+        resource("test-automation-qa.yaml", service("payments", "follow-redirects: true"));
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").build());
+                new HttpTransportBuilder().service("payments", "qa").build());
 
-        assertEquals("Missing 'base.url' (blank values count as missing): looked in the builder,"
-                + " service config 'payments.properties'", e.getMessage());
+        assertEquals("Missing 'services.payments.base-url' (blank values count as missing): looked in the builder,"
+                + " test-automation-qa.yaml", e.getMessage());
+    }
+
+    @Test
+    void theEnvironmentsFileLaysOverTheSharedOneForTheService() throws Exception {
+        try (TestServer server = okServer("payments")) {
+            resource("test-automation.yaml", service("payments", "base-url: " + DEAD_URL, "headers:", "  X-Env: shared"));
+            resource("test-automation-qa.yaml", service("payments", "base-url: " + server.baseUrl()));
+
+            try (HttpTransport transport = new HttpTransportBuilder().service("payments", "qa").build()) {
+                HttpResponse response = transport.get("/who");
+
+                assertEquals("payments", response.body());
+                assertEquals("shared", response.headers().first("X-Seen-Env").get());
+            }
+        }
+    }
+
+    @Test
+    void aMisspelledSettingFailsAtBuildNamingItAndItsFile() throws Exception {
+        resource("test-automation-qa.yaml", service("payments", "base-url: " + DEAD_URL, "connect-timeout: 5"));
+
+        HttpTransportException e = assertThrows(HttpTransportException.class, () ->
+                new HttpTransportBuilder().service("payments", "qa").build());
+
+        assertTrue(e.getMessage().startsWith("Unknown key 'services.payments.connect-timeout' in"
+                + " test-automation-qa.yaml"), e.getMessage());
     }
 
     @Test
@@ -111,18 +140,18 @@ class ConfigTest {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
                 new HttpTransportBuilder().build());
 
-        assertTrue(e.getMessage().contains("base.url"), e.getMessage());
+        assertTrue(e.getMessage().contains("base-url"), e.getMessage());
     }
 
     @Test
     void blankBaseUrlInTheFileFailsAtBuildWithOurErrorNotAtTheFirstRequest() throws Exception {
-        resource("payments.properties", "base.url=   \n");
+        resource("test-automation-qa.yaml", service("payments", "base-url: '   '"));
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").build());
+                new HttpTransportBuilder().service("payments", "qa").build());
 
-        assertTrue(e.getMessage().contains("base.url"), e.getMessage());
-        assertTrue(e.getMessage().contains("payments.properties"), e.getMessage());
+        assertTrue(e.getMessage().contains("base-url"), e.getMessage());
+        assertTrue(e.getMessage().contains("test-automation-qa.yaml"), e.getMessage());
     }
 
 
@@ -131,19 +160,19 @@ class ConfigTest {
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
                 new HttpTransportBuilder().baseUrl(" ").build());
 
-        assertTrue(e.getMessage().contains("base.url"), e.getMessage());
+        assertTrue(e.getMessage().contains("base-url"), e.getMessage());
     }
 
     @Test
     void invalidNumberFailsAtBuildSayingWhereTheValueCameFrom() throws Exception {
-        resource("payments.properties", "base.url=" + DEAD_URL + "\nconnect.timeout.ms=soon\n");
+        resource("test-automation-qa.yaml", service("payments", "base-url: " + DEAD_URL, "connect-timeout-ms: soon"));
 
         HttpTransportException e = assertThrows(HttpTransportException.class, () ->
-                new HttpTransportBuilder().configResource("payments.properties").build());
+                new HttpTransportBuilder().service("payments", "qa").build());
 
-        assertTrue(e.getMessage().contains("connect.timeout.ms"), e.getMessage());
+        assertTrue(e.getMessage().contains("connect-timeout-ms"), e.getMessage());
         assertTrue(e.getMessage().contains("soon"), e.getMessage());
-        assertTrue(e.getMessage().contains("payments.properties"), e.getMessage());
+        assertTrue(e.getMessage().contains("test-automation-qa.yaml"), e.getMessage());
     }
 
     private static TestServer okServer(String name) {
@@ -151,6 +180,15 @@ class ConfigTest {
             ex.getResponseHeaders().add("X-Seen-Env", String.join(",", ex.getRequestHeaders().getOrDefault("X-Env", java.util.List.of())));
             TestServer.respond(ex, 200, name);
         }).start();
+    }
+
+    /** The file of the qa environment holding one service's settings, one per line. */
+    private static String service(String name, String... lines) {
+        StringBuilder yaml = new StringBuilder("services:\n  " + name + ":\n");
+        for (String line : lines) {
+            yaml.append("    ").append(line).append('\n');
+        }
+        return yaml.toString();
     }
 
     private void resource(String name, String content) throws IOException {

@@ -5,20 +5,26 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Configures an {@link HttpServiceClient}. A value given here beats the service config, which beats the default.
+ * Configures an {@link HttpServiceClient}. A value given here beats the service's section of the config, which beats
+ * the default.
  * Building fails if the base URL cannot be resolved.
  */
 public final class HttpTransportBuilder {
 
     private final Map<String, String> overrides = new HashMap<>();
-    private String resource;
+    private String service;
+    private String environment;
     private Headers defaultHeaders = Headers.empty();
     private BodyCodec bodyCodec = new JacksonBodyCodec();
     private Map<String, String> secretsEnv = System.getenv();
 
-    /** The service config: a {@code .properties} file on the classpath, named by the consumer, for this service client. */
-    public HttpTransportBuilder configResource(String resource) {
-        this.resource = resource;
+    /**
+     * The service's settings: {@code services.<service>} in {@code test-automation-<environment>.yaml} on the
+     * classpath, over the same section of {@code test-automation.yaml} if there is one.
+     */
+    public HttpTransportBuilder service(String service, String environment) {
+        this.service = Objects.requireNonNull(service, "service");
+        this.environment = Objects.requireNonNull(environment, "environment");
         return this;
     }
 
@@ -62,7 +68,7 @@ public final class HttpTransportBuilder {
 
     HttpTransport build() {
         return new HttpTransport(
-                HttpConfigLoader.load(resource, overrides, defaultHeaders, secretsEnv),
+                HttpConfigLoader.load(service, environment, overrides, defaultHeaders, secretsEnv),
                 bodyCodec);
     }
 

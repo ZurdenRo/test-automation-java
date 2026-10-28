@@ -25,7 +25,7 @@ What a POST, PUT or PATCH carries: text sent as is, or a model written by the bo
 _Avoid_: Payload, entity
 
 **Service config**:
-A `.properties` resource in the consumer's classpath, named by the consumer, holding one transport's settings. A consumer with several services has several.
+The `services.<name>` section of the consumer's config (`test-automation-<env>.yaml` over `test-automation.yaml`, root `docs/adr/0005`), holding one transport's settings. A consumer with several services has several sections in the same files.
 _Avoid_: Settings file, client config
 
 **Secret**:

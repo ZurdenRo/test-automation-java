@@ -50,12 +50,12 @@ class LoggingTest {
 
     @Test
     void aServiceClientLogsItsBaseUrlAndWhereItCameFromAtInfo() throws IOException {
-        resource("payments-qa.properties", "base.url=http://127.0.0.1:1\n");
+        resource("test-automation-qa.yaml", service("payments", "base-url: http://127.0.0.1:1"));
 
-        new HttpTransportBuilder().configResource("payments-qa.properties").build().close();
+        new HttpTransportBuilder().service("payments", "qa").build().close();
 
         assertTrue(messages(Level.INFO).contains(
-                "Service client on http://127.0.0.1:1 (base.url from service config 'payments-qa.properties')"),
+                "Service client on http://127.0.0.1:1 (base-url from test-automation-qa.yaml)"),
                 () -> messages(Level.INFO).toString());
     }
 
@@ -85,14 +85,15 @@ class LoggingTest {
 
     @Test
     void aSecretIsLoggedByItsVariableNeverByItsValue() throws IOException {
-        resource("payments-qa.properties", "base.url=http://127.0.0.1:1\nsecret.api.token=PAYMENTS_QA_TOKEN\n");
+        resource("test-automation-qa.yaml", service("payments", "base-url: http://127.0.0.1:1", "secrets:",
+                "  api-token: PAYMENTS_QA_TOKEN"));
 
-        try (HttpTransport transport = new HttpTransportBuilder().configResource("payments-qa.properties")
+        try (HttpTransport transport = new HttpTransportBuilder().service("payments", "qa")
                 .secretsFrom(Map.of("PAYMENTS_QA_TOKEN", "qa-token")).build()) {
-            transport.secret("api.token");
+            transport.secret("api-token");
         }
 
-        assertTrue(messages(Level.DEBUG).contains("Secret 'api.token' read from environment variable PAYMENTS_QA_TOKEN"),
+        assertTrue(messages(Level.DEBUG).contains("Secret 'api-token' read from environment variable PAYMENTS_QA_TOKEN"),
                 () -> messages(Level.DEBUG).toString());
         assertNothingLogged("qa-token");
     }
@@ -113,6 +114,15 @@ class LoggingTest {
                 .filter(e -> e.getLevel() == level)
                 .map(ILoggingEvent::getFormattedMessage)
                 .collect(Collectors.toList());
+    }
+
+    /** The file of the qa environment holding one service's settings, one per line. */
+    private static String service(String name, String... lines) {
+        StringBuilder yaml = new StringBuilder("services:\n  " + name + ":\n");
+        for (String line : lines) {
+            yaml.append("    ").append(line).append('\n');
+        }
+        return yaml.toString();
     }
 
     private void resource(String name, String content) throws IOException {
