@@ -33,7 +33,7 @@ One web application under test, with a name and its own base URL. Every page obj
 _Avoid_: Host, site, domain, base URL (alone)
 
 **Environment**:
-One deployment of the apps under test (QA, staging), described by its own config file, `ui-test-<env>.properties`. A suite names its environment once, with the `env` parameter, and runs against it; QA is the default.
+One deployment of the apps under test (QA, staging), described by its own config file, `test-automation-<env>.yaml`, over the shared `test-automation.yaml` (root `docs/adr/0005`). A suite names its environment once, with the `env` parameter, and runs against it; QA is the default.
 _Avoid_: Stage, profile, target
 
 **Secret**:
