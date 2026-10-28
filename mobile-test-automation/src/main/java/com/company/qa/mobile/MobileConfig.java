@@ -33,7 +33,7 @@ final class MobileConfig {
         this.evidenceDir = evidenceDir;
     }
 
-    /** A secret by its name in {@code secret.<name>}, read from the environment variable the file names. */
+    /** A secret by its name in {@code mobile.secrets.<name>}, read from the environment variable the file names. */
     String secret(String name) {
         return loader.secret(name);
     }

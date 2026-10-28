@@ -45,10 +45,10 @@ class DeviceTest {
         run().run(NavigatesTest.class).assertAllPassed();
 
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
-                .config("appium.server.url", "http://localhost:4723")
-                .config("android.app.package", APP_PACKAGE)
+                .config("appium-server-url", "http://localhost:4723")
+                .config("android.app-package", APP_PACKAGE)
                 .config("android.devices", "emulator-5554")
-                .config("evidence.dir", evidenceDir.toString())
+                .config("evidence-dir", evidenceDir.toString())
                 .run(NavigatesTest.class);
 
         results.assertAllPassed();
@@ -68,10 +68,10 @@ class DeviceTest {
 
     private ConsumerRun run() {
         return ConsumerRun.in(classpathDir)
-                .config("appium.server.url", "http://localhost:4723")
+                .config("appium-server-url", "http://localhost:4723")
                 .config("android.app", APP)
                 .config("android.devices", "emulator-5554")
-                .config("evidence.dir", evidenceDir.toString());
+                .config("evidence-dir", evidenceDir.toString());
     }
 
     private static List<String> files(Path dir) throws IOException {

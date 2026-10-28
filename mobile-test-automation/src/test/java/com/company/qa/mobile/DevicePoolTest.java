@@ -24,7 +24,7 @@ class DevicePoolTest {
 
     @Test
     void eachThreadGetsADeviceNoOtherHolds() {
-        DevicePool pool = DevicePool.of("android.devices", server, List.of("emulator-5554", "emulator-5556"));
+        DevicePool pool = DevicePool.of("mobile.android.devices", server, List.of("emulator-5554", "emulator-5556"));
 
         String first = pool.acquire(100);
         String second = pool.acquire(100);
@@ -34,22 +34,22 @@ class DevicePoolTest {
 
     @Test
     void whoeverAsksForTheSameDevicesOnTheSameServerSharesThePool() {
-        assertSame(DevicePool.of("android.devices", server, List.of("emulator-5554")),
-                DevicePool.of("android.devices", server, List.of("emulator-5554")));
+        assertSame(DevicePool.of("mobile.android.devices", server, List.of("emulator-5554")),
+                DevicePool.of("mobile.android.devices", server, List.of("emulator-5554")));
     }
 
     @Test
     void anotherServerOrAnotherListIsAnotherPool() {
-        DevicePool pool = DevicePool.of("android.devices", server, List.of("emulator-5554"));
+        DevicePool pool = DevicePool.of("mobile.android.devices", server, List.of("emulator-5554"));
 
-        assertFalse(pool == DevicePool.of("android.devices", URI.create("http://other:4723"),
+        assertFalse(pool == DevicePool.of("mobile.android.devices", URI.create("http://other:4723"),
                 List.of("emulator-5554")));
-        assertFalse(pool == DevicePool.of("android.devices", server, List.of("emulator-5556")));
+        assertFalse(pool == DevicePool.of("mobile.android.devices", server, List.of("emulator-5556")));
     }
 
     @Test
     void aThreadWaitsForADeviceAnotherReturns() throws Exception {
-        DevicePool pool = DevicePool.of("android.devices", server, List.of("emulator-5554"));
+        DevicePool pool = DevicePool.of("mobile.android.devices", server, List.of("emulator-5554"));
         String held = pool.acquire(100);
 
         CompletableFuture<String> waiting = CompletableFuture.supplyAsync(() -> pool.acquire(5_000));
@@ -62,20 +62,20 @@ class DevicePoolTest {
 
     @Test
     void whenNoDeviceFreesUpTheErrorNamesThePoolAndWhatToChange() {
-        DevicePool pool = DevicePool.of("android.devices", server, List.of("emulator-5554", "emulator-5556"));
+        DevicePool pool = DevicePool.of("mobile.android.devices", server, List.of("emulator-5554", "emulator-5556"));
         pool.acquire(100);
         pool.acquire(100);
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> pool.acquire(50));
 
-        assertEquals("No device of android.devices (emulator-5554, emulator-5556) was free within 50 ms: more test"
-                + " threads than devices, or a session that was never closed. Raise device.wait.timeout.ms, add"
-                + " devices to android.devices, or run fewer threads", e.getMessage());
+        assertEquals("No device of mobile.android.devices (emulator-5554, emulator-5556) was free within 50 ms: more test"
+                + " threads than devices, or a session that was never closed. Raise device-wait-timeout-ms, add"
+                + " devices to mobile.android.devices, or run fewer threads", e.getMessage());
     }
 
     @Test
     void anInterruptedWaitKeepsTheInterruptAndFails() {
-        DevicePool pool = DevicePool.of("android.devices", server, List.of("emulator-5554"));
+        DevicePool pool = DevicePool.of("mobile.android.devices", server, List.of("emulator-5554"));
         pool.acquire(100);
 
         Thread.currentThread().interrupt();

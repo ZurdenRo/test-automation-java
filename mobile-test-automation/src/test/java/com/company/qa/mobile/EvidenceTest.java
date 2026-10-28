@@ -91,10 +91,10 @@ class EvidenceTest {
 
     private ConsumerRun run() {
         return ConsumerRun.in(classpathDir)
-                .config("appium.server.url", appium.url())
+                .config("appium-server-url", appium.url())
                 .config("android.app", "/apps/ApiDemos-debug.apk")
                 .config("android.devices", "emulator-5554")
-                .config("evidence.dir", evidenceDir.toString());
+                .config("evidence-dir", evidenceDir.toString());
     }
 
     private List<String> files() throws IOException {

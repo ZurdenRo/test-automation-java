@@ -34,7 +34,7 @@ final class DevicePool {
      * The pool for these devices on this server; the same one for every caller that names them again, so threads
      * share it. A run whose {@code <test>}s name other servers or devices has one pool for each.
      *
-     * @param name what the config calls the list, for messages ({@code android.devices})
+     * @param name what the config calls the list, for messages ({@code mobile.android.devices})
      */
     static DevicePool of(String name, URI server, List<String> serials) {
         return POOLS.computeIfAbsent(server + " " + name + "=" + serials, key -> {
@@ -50,7 +50,7 @@ final class DevicePool {
             if (serial == null) {
                 throw new IllegalStateException("No device of " + name + " (" + String.join(", ", serials)
                         + ") was free within " + timeoutMs + " ms: more test threads than devices, or a session"
-                        + " that was never closed. Raise device.wait.timeout.ms, add devices to " + name
+                        + " that was never closed. Raise device-wait-timeout-ms, add devices to " + name
                         + ", or run fewer threads");
             }
             return serial;

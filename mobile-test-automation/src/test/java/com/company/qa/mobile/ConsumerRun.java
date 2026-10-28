@@ -15,19 +15,20 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code mobile-test-qa.properties} (the
+ * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code test-automation-qa.yaml} (the
  * default config resource) written for the run and put on the classpath, and reports how each test method ended.
  */
 final class ConsumerRun {
 
     private final Path classpathDir;
-    private final StringBuilder config = new StringBuilder();
+    private final Map<String, String> config = new LinkedHashMap<>();
     private final Map<String, Map<String, String>> tests = new LinkedHashMap<>();
     private final Map<String, String> suiteParameters = new LinkedHashMap<>();
     private String parallel;
@@ -41,9 +42,54 @@ final class ConsumerRun {
         return new ConsumerRun(classpathDir);
     }
 
+    /**
+     * A setting of the {@code mobile} section, by its dotted path ({@code android.app}); a value of
+     * {@code android.devices} is a comma separated list.
+     */
     ConsumerRun config(String key, String value) {
-        config.append(key).append('=').append(value).append('\n');
+        config.put(key, value);
         return this;
+    }
+
+    /** The {@code mobile} section of a config file, nested from dotted paths. */
+    static String mobileYaml(Map<String, String> settings) {
+        if (settings.isEmpty()) {
+            return "";
+        }
+        Map<String, Object> tree = new LinkedHashMap<>();
+        settings.forEach((path, value) -> {
+            String[] names = path.split("\\.");
+            Map<String, Object> level = tree;
+            for (int i = 0; i < names.length - 1; i++) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> child = (Map<String, Object>) level.computeIfAbsent(names[i],
+                        n -> new LinkedHashMap<String, Object>());
+                level = child;
+            }
+            level.put(names[names.length - 1], path.endsWith("devices") ? Arrays.asList(value.split(",")) : value);
+        });
+        StringBuilder yaml = new StringBuilder("mobile:\n");
+        emit(yaml, tree, 1);
+        return yaml.toString();
+    }
+
+    private static void emit(StringBuilder yaml, Map<String, Object> level, int depth) {
+        level.forEach((name, value) -> {
+            yaml.append("  ".repeat(depth)).append(name).append(':');
+            if (value instanceof Map) {
+                yaml.append('\n');
+                @SuppressWarnings("unchecked")
+                Map<String, Object> child = (Map<String, Object>) value;
+                emit(yaml, child, depth + 1);
+            } else if (value instanceof List) {
+                yaml.append('\n');
+                for (Object item : (List<?>) value) {
+                    yaml.append("  ".repeat(depth + 1)).append("- '").append(item).append("'\n");
+                }
+            } else {
+                yaml.append(" '").append(((String) value).replace("'", "''")).append("'\n");
+            }
+        });
     }
 
     /** A {@code <test>} with its own {@code <parameter>}s; without any, the run is a single {@code <test>}. */
@@ -70,7 +116,7 @@ final class ConsumerRun {
     }
 
     Results run(Class<?>... classes) {
-        write("mobile-test-qa.properties", config.toString());
+        write("test-automation-qa.yaml", mobileYaml(config));
         XmlSuite suite = new XmlSuite();
         suite.setName("consumer");
         suite.setParameters(new LinkedHashMap<>(suiteParameters));
