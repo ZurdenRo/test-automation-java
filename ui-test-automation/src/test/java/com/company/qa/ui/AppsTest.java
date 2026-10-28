@@ -35,8 +35,8 @@ class AppsTest {
     @Test
     void aTestMovesBetweenAppsInOneTabByOpeningTheirPages() {
         ConsumerRun.in(classpathDir)
-                .config("app.a.url", appA.url())
-                .config("app.billing.url", appB.url())
+                .config("apps.a", appA.url())
+                .config("apps.billing", appB.url())
                 .run(GoesFromAToBAndBackTest.class)
                 .assertAllPassed();
     }
@@ -44,10 +44,10 @@ class AppsTest {
     @Test
     void aPageOfAnAppWithoutAUrlNamesTheSettingToAdd() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
-                .config("app.a.url", appA.url())
+                .config("apps.a", appA.url())
                 .run(OpensInvoiceTest.class);
 
-        assertEquals("Missing 'app.billing.url' for InvoicePage in ui-test-qa.properties"
+        assertEquals("Missing 'ui.apps.billing' in test-automation-qa.yaml, needed by InvoicePage"
                         + " (blank values count as missing)",
                 results.failure("opensInvoice").getMessage());
     }

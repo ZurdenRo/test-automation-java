@@ -33,7 +33,7 @@ class SettingsTest {
 
     @Test
     void theViewportComesFromTheConfig() {
-        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .config("viewport.width", "800").config("viewport.height", "600")
                 .run(ChecksViewportTest.class)
                 .assertAllPassed();
@@ -41,8 +41,8 @@ class SettingsTest {
 
     @Test
     void theTimeoutBoundsHowLongAnActionWaits() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
-                .config("timeout.ms", "300")
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+                .config("timeout-ms", "300")
                 .run(ClicksWhatIsNotThereTest.class);
 
         assertTrue(results.failure("clicksWhatIsNotThere").getMessage().contains("Timeout 300ms"),
@@ -51,7 +51,7 @@ class SettingsTest {
 
     @Test
     void eachXmlTestRunsInTheBrowserItsParametersName() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .xmlTest("on chromium", Map.of("browser", "chromium"))
                 .xmlTest("on firefox", Map.of("browser", "firefox"))
                 .run(ChecksBrowserTest.class)
@@ -63,8 +63,8 @@ class SettingsTest {
     @Test
     void theSuiteNamesTheConfigOfItsEnvironment() {
         ConsumerRun.in(classpathDir)
-                .resource("ui-test-staging.properties",
-                        "app.shop.url=" + site.url() + "\nviewport.width=640\nviewport.height=480\n")
+                .resource("test-automation-staging.yaml", ConsumerRun.uiYaml(Map.of("apps.shop", site.url(),
+                        "viewport.width", "640", "viewport.height", "480")))
                 .suiteParameter("env", "staging")
                 .run(RunsOnStagingTest.class)
                 .assertAllPassed();

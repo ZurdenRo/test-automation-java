@@ -29,21 +29,21 @@ class LifecycleTest {
 
     @Test
     void eachTestMethodGetsAFreshBrowserContext() {
-        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .run(LeavesACookieBehindTest.class)
                 .assertAllPassed();
     }
 
     @Test
     void aSecondSuiteInTheSameJvmLaunchesItsOwnBrowser() {
-        ConsumerRun run = ConsumerRun.in(classpathDir).config("app.shop.url", site.url());
+        ConsumerRun run = ConsumerRun.in(classpathDir).config("apps.shop", site.url());
         run.run(LeavesACookieBehindTest.class).assertAllPassed();
         run.run(LeavesACookieBehindTest.class).assertAllPassed();
     }
 
     @Test
     void parallelMethodsEachGetTheirOwnContext() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .parallelMethods()
                 .run(SetsItsOwnCookieTest.class)
                 .assertAllPassed();

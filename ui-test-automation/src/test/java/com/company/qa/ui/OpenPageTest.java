@@ -32,14 +32,14 @@ class OpenPageTest {
 
     @Test
     void openNavigatesToThePageObjectsPathOnItsApp() {
-        ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .run(OpensLoginPageTest.class)
                 .assertAllPassed();
     }
 
     @Test
     void openingAPageWithoutAPathSaysHowToReachIt() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .run(OpensDashboardPageTest.class);
 
         assertEquals(List.of("opensDashboard"), results.failed());
@@ -49,7 +49,7 @@ class OpenPageTest {
 
     @Test
     void aPageObjectWithoutAPageConstructorIsNamed() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .run(OpensNoConstructorPageTest.class);
 
         assertEquals("NoConstructorPage needs a public constructor taking a Page",
@@ -58,7 +58,7 @@ class OpenPageTest {
 
     @Test
     void openingAPageWithAPathButNoAppSaysToNameIt() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("app.shop.url", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
                 .run(OpensAppLessPageTest.class);
 
         assertEquals("AppLessPage has a path but no app: override app() to name the app whose"

@@ -16,6 +16,8 @@ dependencies {
     api libs.testng
     // Logs through SLF4J; the consumer's backend (Logback, Log4j) decides levels and where they go.
     implementation libs.slf4j.api
+    // Reads test-automation.yaml; none of its types is part of the API (root ADR-0006).
+    implementation project(':config-loader')
     testImplementation libs.junit.jupiter
     testImplementation libs.logback.classic
 

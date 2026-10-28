@@ -50,13 +50,13 @@ class LoggingTest {
     @Test
     void eachTestLogsItsEnvironmentAndTheBrowserItLaunchesAtInfo() {
         ConsumerRun.in(classpathDir)
-                .resource("ui-test-staging.properties", "")
+                .resource("test-automation-staging.yaml", "")
                 .suiteParameter("env", "staging")
                 .run(DoesNothingTest.class)
                 .assertAllPassed();
 
         List<String> info = messages(Level.INFO);
-        assertTrue(info.contains("<test> 'test' runs on env 'staging' (ui-test-staging.properties)"), info::toString);
+        assertTrue(info.contains("<test> 'test' runs on env 'staging' (test-automation-staging.yaml)"), info::toString);
         assertTrue(info.stream().anyMatch(m -> m.startsWith("Launching chromium (headless) on thread ")),
                 info::toString);
     }
@@ -64,27 +64,27 @@ class LoggingTest {
     @Test
     void aSuiteStillSettingUiConfigIsWarnedThatItRunsOnTheDefaultEnvironment() {
         ConsumerRun.in(classpathDir)
-                .resource("ui-test-staging.properties", "")
+                .resource("test-automation-staging.yaml", "")
                 .suiteParameter("ui.config", "ui-test-staging.properties")
                 .run(DoesNothingTest.class)
                 .assertAllPassed();
 
         assertTrue(messages(Level.WARN).contains("Ignoring <parameter> ui.config 'ui-test-staging.properties':"
-                + " <parameter> env replaced it, so <test> 'test' runs on env 'qa' (ui-test-qa.properties)"),
+                + " <parameter> env replaced it, so <test> 'test' runs on env 'qa' (test-automation-qa.yaml)"),
                 () -> messages(Level.WARN).toString());
     }
 
     @Test
     void aSecretIsLoggedByItsVariableNeverByItsValue() throws IOException {
-        Files.writeString(classpathDir.resolve("ui-test-qa.properties"),
-                "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
+        Files.writeString(classpathDir.resolve("test-automation-qa.yaml"),
+                "ui:\n  secrets:\n    admin-password: SHOP_QA_ADMIN_PASSWORD\n");
         Thread.currentThread().setContextClassLoader(
                 new URLClassLoader(new URL[]{classpathDir.toUri().toURL()}, originalLoader));
 
-        UiConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret")).secret("admin.password");
+        UiConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret")).secret("admin-password");
 
         List<String> debug = messages(Level.DEBUG);
-        assertTrue(debug.contains("Secret 'admin.password' read from environment variable SHOP_QA_ADMIN_PASSWORD"),
+        assertTrue(debug.contains("Secret 'admin-password' read from environment variable SHOP_QA_ADMIN_PASSWORD"),
                 debug::toString);
         assertFalse(appender.list.stream().anyMatch(e -> e.getFormattedMessage().contains("qa-secret")));
     }

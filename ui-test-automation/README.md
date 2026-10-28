@@ -15,7 +15,7 @@ public abstract class ShopPage extends BasePage {
 
     @Override
     protected String app() {
-        return "shop";                        // its base URL is app.shop.url
+        return "shop";                        // its base URL is ui.apps.shop
     }
 }
 
@@ -100,20 +100,23 @@ Each test method gets a fresh browser context (cookies, storage, tabs), so tests
 
 Each app has a name and a base URL in the config; each page object with a path names its app with `app()`:
 
-```properties
-app.shop.url=https://shop.example.com
-app.billing.url=https://billing.example.com
+```yaml
+# test-automation-qa.yaml
+ui:
+  apps:
+    shop: https://shop.example.com
+    billing: https://billing.example.com
 ```
 
 A test moves between apps by opening their pages, in one tab or in several. Since hosts live only in the config, switching environments moves them all. Opening a page with a path but no app fails, naming the page.
 
 ## Configuration
 
-Settings live in one `.properties` file per environment on the test classpath (`src/test/resources`), named `ui-test-<env>.properties`. A suite names its environment with the `env` parameter; without it the environment is `qa`:
+Settings live in YAML on the test classpath (`src/test/resources`), under the `ui` section: `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares. Other modules read their own sections of the same files, so a project that also uses http has one set of files. A suite names its environment with the `env` parameter; without it the environment is `qa`:
 
 ```xml
 <suite name="checkout-staging">
-  <parameter name="env" value="staging"/>   <!-- reads ui-test-staging.properties -->
+  <parameter name="env" value="staging"/>   <!-- reads test-automation-staging.yaml over test-automation.yaml -->
   <test name="checkout"><classes>...</classes></test>
 </suite>
 ```
@@ -125,7 +128,7 @@ A test that also calls services passes the same environment to their clients, so
 ```java
 public class UsersClient extends HttpServiceClient {
     public UsersClient(String env) {
-        super("users-service-" + env + ".properties");
+        super("users", env);
     }
 }
 ```
@@ -141,21 +144,21 @@ Running a test or class with the IDE's run button works the same: the IDE builds
 For each setting, the first value found wins:
 
 1. a `<parameter>` of the running `<test>` or its `<suite>` (only `browser`, `channel`, `headless`, `viewport.width`, `viewport.height`)
-2. the config file
+2. the `ui` section of the config: the environment's file over the shared one
 3. the default
 
-Environment variables are not read for settings: they are for secrets only.
+Environment variables are not read for settings: they are for secrets only. A key that is not in the table, or a section no module reads, fails the run, naming the key and the file.
 
-| Key | Default | |
+| Key under `ui` | Default | |
 |---|---|---|
-| `app.<name>.url` | | The base URL of an app; needed only when a test opens one of its pages. |
+| `apps.<name>` | | The base URL of an app; needed only when a test opens one of its pages. |
 | `browser` | `chromium` | `chromium`, `firefox` or `webkit` (Safari's engine). |
 | `channel` | | `chrome` or `msedge`: the browser installed on the machine instead of Playwright's. |
 | `headless` | `true` | |
-| `timeout.ms` | `30000` | How long an action waits before failing. |
-| `viewport.width`, `viewport.height` | `1280`, `720` | |
-| `slow.mo.ms` | `0` | A pause before each action, to watch a run. |
-| `evidence.dir` | `ui-evidence` | Relative to the directory the tests run in; add it to `.gitignore`. |
+| `timeout-ms` | `30000` | How long an action waits before failing. |
+| `viewport.width`, `viewport.height` | `1280`, `720` | Nested: `viewport: { width: 1280, height: 720 }`. |
+| `slow-mo-ms` | `0` | A pause before each action, to watch a run. |
+| `evidence-dir` | `ui-evidence` | Relative to the directory the tests run in; add it to `.gitignore`. |
 | `trace` | `off` | `on-failure` also keeps a Playwright trace of a failed test. |
 
 The same suite in two browsers in one run:
@@ -169,25 +172,29 @@ The same suite in two browsers in one run:
 
 ## Secrets
 
-Users, passwords and keys live in environment variables, never in a `.properties` file. Each environment's file names the variable that holds each secret, and the test asks for the secret by that name, the same in every environment:
+Users, passwords and keys live in environment variables, never in a YAML file. Each environment's file names the variable that holds each secret under `ui.secrets`, and the test asks for the secret by that name, the same in every environment:
 
-```properties
-# ui-test-qa.properties
-secret.admin.user=SHOP_QA_ADMIN_USER
-secret.admin.password=SHOP_QA_ADMIN_PASSWORD
+```yaml
+# test-automation-qa.yaml
+ui:
+  secrets:
+    admin-user: SHOP_QA_ADMIN_USER
+    admin-password: SHOP_QA_ADMIN_PASSWORD
 ```
 
-```properties
-# ui-test-dev.properties
-secret.admin.user=SHOP_DEV_ADMIN_USER
-secret.admin.password=SHOP_DEV_ADMIN_PASSWORD
+```yaml
+# test-automation-dev.yaml
+ui:
+  secrets:
+    admin-user: SHOP_DEV_ADMIN_USER
+    admin-password: SHOP_DEV_ADMIN_PASSWORD
 ```
 
 ```java
-open(LoginPage.class).loginAs(secret("admin.user"), secret("admin.password"));
+open(LoginPage.class).loginAs(secret("admin-user"), secret("admin-password"));
 ```
 
-A missing `secret.<name>` key or an unset variable fails the test, naming the key or the variable and never the value. Locally, export the variables (or set them in the IDE's run configuration); on CI, map them from the CI's secret store:
+A missing `ui.secrets.<name>` key or an unset variable fails the test, naming the key or the variable and never the value. Locally, export the variables (or set them in the IDE's run configuration); on CI, map them from the CI's secret store:
 
 ```yaml
 env:
@@ -197,7 +204,7 @@ env:
 
 ## Failure evidence
 
-When a test fails, the library saves a screenshot of each tab, and the trace if `trace=on-failure`, to `<evidence.dir>/<test class>/<method>.png` (`-tab2.png`, `-trace.zip`). The paths go to the TestNG report and the log. Open a trace with `npx playwright show-trace <file>` or at trace.playwright.dev.
+When a test fails, the library saves a screenshot of each tab, and the trace if `trace: on-failure`, to `<evidence-dir>/<test class>/<method>.png` (`-tab2.png`, `-trace.zip`). The paths go to the TestNG report and the log. Open a trace with `npx playwright show-trace <file>` or at trace.playwright.dev.
 
 ## Logging
 
@@ -206,7 +213,7 @@ The library logs through SLF4J under `com.company.qa.ui`. TestNG already brings 
 | Level | What |
 |---|---|
 | `WARN` | A suite still setting `ui.config`, which `env` replaced: it runs on the default environment. |
-| `INFO` | The environment and file each `<test>` runs on; each browser launched; failure evidence paths. |
+| `INFO` | The environment and files each `<test>` runs on; each browser launched; failure evidence paths. |
 | `DEBUG` | The settings each test method resolved; each page opened, with its URL; the variable each secret was read from. |
 
 Secret values are never logged, at any level. `src/test/resources/logback-test.xml` to see the `DEBUG` lines:

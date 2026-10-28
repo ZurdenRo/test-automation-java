@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code ui-test-qa.properties} (the
- * default config resource) written for the run and put on the classpath, and reports how each test method ended.
+ * Runs consumer-shaped TestNG classes the way a consumer's suite would, with a {@code test-automation-qa.yaml} (the
+ * default environment's file) written for the run and put on the classpath, and reports how each test method ended.
  */
 final class ConsumerRun {
 
     private final Path classpathDir;
-    private final StringBuilder config = new StringBuilder();
+    private final Map<String, String> config = new LinkedHashMap<>();
     private final Map<String, Map<String, String>> tests = new LinkedHashMap<>();
     private final Map<String, String> suiteParameters = new LinkedHashMap<>();
     private String parallel;
@@ -41,9 +41,46 @@ final class ConsumerRun {
         return new ConsumerRun(classpathDir);
     }
 
+    /** A setting of the {@code ui} section, by its dotted path: {@code apps.shop}, {@code viewport.width}. */
     ConsumerRun config(String key, String value) {
-        config.append(key).append('=').append(value).append('\n');
+        config.put(key, value);
         return this;
+    }
+
+    /** The {@code ui} section of a config file, nested from dotted paths. */
+    static String uiYaml(Map<String, String> settings) {
+        if (settings.isEmpty()) {
+            return "";
+        }
+        Map<String, Object> tree = new LinkedHashMap<>();
+        settings.forEach((path, value) -> {
+            String[] names = path.split("\\.");
+            Map<String, Object> level = tree;
+            for (int i = 0; i < names.length - 1; i++) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> child = (Map<String, Object>) level.computeIfAbsent(names[i],
+                        n -> new LinkedHashMap<String, Object>());
+                level = child;
+            }
+            level.put(names[names.length - 1], value);
+        });
+        StringBuilder yaml = new StringBuilder("ui:\n");
+        emit(yaml, tree, 1);
+        return yaml.toString();
+    }
+
+    private static void emit(StringBuilder yaml, Map<String, Object> level, int depth) {
+        level.forEach((name, value) -> {
+            yaml.append("  ".repeat(depth)).append(name).append(':');
+            if (value instanceof Map) {
+                yaml.append('\n');
+                @SuppressWarnings("unchecked")
+                Map<String, Object> child = (Map<String, Object>) value;
+                emit(yaml, child, depth + 1);
+            } else {
+                yaml.append(" '").append(((String) value).replace("'", "''")).append("'\n");
+            }
+        });
     }
 
     /** A {@code <test>} with its own {@code <parameter>}s; without any, the run is a single {@code <test>}. */
@@ -70,7 +107,7 @@ final class ConsumerRun {
     }
 
     Results run(Class<?>... classes) {
-        write("ui-test-qa.properties", config.toString());
+        write("test-automation-qa.yaml", uiYaml(config));
         XmlSuite suite = new XmlSuite();
         suite.setName("consumer");
         suite.setParameters(new LinkedHashMap<>(suiteParameters));

@@ -22,6 +22,9 @@ class SecretsTest {
 
     private static TestSite site;
 
+    private static final String QA_SECRET = "ui:\n  secrets:\n    admin-password: SHOP_QA_ADMIN_PASSWORD\n";
+    private static final String DEV_SECRET = "ui:\n  secrets:\n    admin-password: SHOP_DEV_ADMIN_PASSWORD\n";
+
     @TempDir
     Path classpathDir;
 
@@ -44,50 +47,50 @@ class SecretsTest {
 
     @Test
     void theEnvironmentsFileNamesTheVariableThatHoldsTheSecret() throws IOException {
-        write("ui-test-qa.properties", "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
 
         UiConfig config = UiConfigLoader.load(Map.of(),
                 Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret", "SHOP_DEV_ADMIN_PASSWORD", "dev-secret"));
 
-        assertEquals("qa-secret", config.secret("admin.password"));
+        assertEquals("qa-secret", config.secret("admin-password"));
     }
 
     @Test
     void theSameSecretNameReadsAnotherVariableInAnotherEnvironment() throws IOException {
-        write("ui-test-qa.properties", "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
-        write("ui-test-dev.properties", "secret.admin.password=SHOP_DEV_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
+        write("test-automation-dev.yaml", DEV_SECRET);
 
         UiConfig config = UiConfigLoader.load(Map.of("env", "dev"),
                 Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret", "SHOP_DEV_ADMIN_PASSWORD", "dev-secret"));
 
-        assertEquals("dev-secret", config.secret("admin.password"));
+        assertEquals("dev-secret", config.secret("admin-password"));
     }
 
     @Test
     void aSecretTheFileDoesNotMapIsNamedWithTheKeyToAdd() throws IOException {
-        write("ui-test-qa.properties", "");
+        write("test-automation-qa.yaml", "");
         UiConfig config = UiConfigLoader.load(Map.of(), Map.of());
 
-        UiConfigException e = assertThrows(UiConfigException.class, () -> config.secret("admin.password"));
+        UiConfigException e = assertThrows(UiConfigException.class, () -> config.secret("admin-password"));
 
-        assertEquals("Missing 'secret.admin.password' in ui-test-qa.properties: it names the environment variable"
-                + " that holds secret 'admin.password'", e.getMessage());
+        assertEquals("Missing 'ui.secrets.admin-password' in test-automation-qa.yaml: it names the environment"
+                + " variable that holds secret 'admin-password'", e.getMessage());
     }
 
     @Test
     void anUnsetVariableIsNamedWithoutRevealingAnything() throws IOException {
-        write("ui-test-qa.properties", "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
         UiConfig config = UiConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", "  "));
 
-        UiConfigException e = assertThrows(UiConfigException.class, () -> config.secret("admin.password"));
+        UiConfigException e = assertThrows(UiConfigException.class, () -> config.secret("admin-password"));
 
-        assertEquals("Secret 'admin.password' needs environment variable SHOP_QA_ADMIN_PASSWORD, which is not set"
-                + " (blank values count as missing; ui-test-qa.properties names it)", e.getMessage());
+        assertEquals("Secret 'admin-password' needs environment variable SHOP_QA_ADMIN_PASSWORD, which is not set"
+                + " (blank values count as missing; test-automation-qa.yaml names it)", e.getMessage());
     }
 
     @Test
     void aUiTestReadsItsSecretsFromTheProcessEnvironment() {
-        ConsumerRun.in(classpathDir).config("secret.search.path", "PATH")
+        ConsumerRun.in(classpathDir).config("secrets.search-path", "PATH")
                 .run(ReadsPathTest.class)
                 .assertAllPassed();
     }
@@ -95,11 +98,11 @@ class SecretsTest {
     @Test
     void aUiTestWhoseVariableIsUnsetFailsNamingIt() {
         ConsumerRun.Results results = ConsumerRun.in(classpathDir)
-                .config("secret.admin.password", "QA_UI_SECRETS_TEST_SURELY_UNSET")
+                .config("secrets.admin-password", "QA_UI_SECRETS_TEST_SURELY_UNSET")
                 .run(ReadsUnsetSecretTest.class);
 
         assertTrue(results.failure("readsIt").getMessage()
-                .startsWith("Secret 'admin.password' needs environment variable QA_UI_SECRETS_TEST_SURELY_UNSET"));
+                .startsWith("Secret 'admin-password' needs environment variable QA_UI_SECRETS_TEST_SURELY_UNSET"));
     }
 
     private void write(String name, String content) throws IOException {
@@ -111,14 +114,14 @@ class SecretsTest {
     public static class ReadsPathTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void readsIt() {
-            assertFalse(secret("search.path").isEmpty());
+            assertFalse(secret("search-path").isEmpty());
         }
     }
 
     public static class ReadsUnsetSecretTest extends BaseUiTest {
         @org.testng.annotations.Test
         public void readsIt() {
-            secret("admin.password");
+            secret("admin-password");
         }
     }
 }
