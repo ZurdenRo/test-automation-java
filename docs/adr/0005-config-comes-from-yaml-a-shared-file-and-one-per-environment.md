@@ -6,12 +6,13 @@ A consumer's settings live in `test-automation-<env>.yaml` (required) laid over 
 # test-automation.yaml                    # test-automation-qa.yaml
 ui:                                       ui:
   browser: chromium                         apps:
-  timeout-ms: 30000                           shop: https://shop.qa.example.com
-services:                                   secrets:
-  users:                                      admin-user: SHOP_QA_ADMIN_USER
-    headers: { Accept: application/json }  services:
-                                              users:
-                                                base-url: https://users.qa.example.com
+  timeout-ms: 30000                           shop:
+services:                                       url: https://shop.qa.example.com
+  users:                                        secrets:
+    headers: { Accept: application/json }         user: SHOP_QA_USER
+                                          services:
+                                            users:
+                                              base-url: https://users.qa.example.com
 ```
 
 - **Merge**: key by key, the environment's file winning. A list is replaced whole, and a blank or `null` value is absent, so it never hides a shared value.
@@ -19,7 +20,7 @@ services:                                   secrets:
 - **Keys**: nested YAML in kebab-case (`base-url`, `viewport.width`, `android.devices`), one way to write each, never a key with a dot. Platform keys of mobile nest under `mobile.android` (replacing the prefix of ADR-0004).
 - **Strict**: an unknown key, an unknown top-level section, a duplicate key, or a map or list where a value goes fails, naming the key and the file. Reading values of the consumer's own from these files is out of scope.
 - **Text, YAML 1.2**: values are read as text and validated as before, so `timeout-ms: "30000"` and `30000` are the same and `trace: off` is the text `off`. snakeyaml-engine, not SnakeYAML, whose YAML 1.1 turns `off`, `no` and `yes` into booleans.
-- **No interpolation**: `${VAR}` is not supported. A secret is named under the section's `secrets:` (the variable's name, never its value), per section so two services can each have an `api-token`.
+- **No interpolation**: `${VAR}` is not supported. A secret is named under the `secrets:` of the thing that owns it (the variable's name, never its value): a service (`services.<name>.secrets`) or a web app (`ui.apps.<app>.secrets`), and under `mobile` for the mobile module. Two services, or two apps, can each have an `api-token` or a `password`.
 - **Sources**: a value remembers the file it came from (or the `<parameter>` that overrode it) and errors say so; the first log line of a run lists the files read.
 
 ## Consequences

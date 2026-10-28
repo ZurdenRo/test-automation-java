@@ -43,8 +43,8 @@ class TabsTest {
 
     private ConsumerRun.Results run(Class<?> test) {
         return ConsumerRun.in(classpathDir)
-                .config("apps.a", appA.url())
-                .config("apps.billing", appB.url())
+                .config("apps.a.url", appA.url())
+                .config("apps.billing.url", appB.url())
                 .run(test);
     }
 

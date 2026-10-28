@@ -32,6 +32,7 @@ final class UiConfigLoader {
     static final String EVIDENCE_DIR = "evidence-dir";
     static final String TRACE = "trace";
     private static final String APPS = "apps";
+    private static final String URL = "url";
     private static final String SECRETS = "secrets";
 
     static final String ENV = "env";
@@ -41,7 +42,9 @@ final class UiConfigLoader {
     private static final Set<String> XML_SETTINGS = Set.of(BROWSER, CHANNEL, HEADLESS, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     private static final List<String> KEYS = List.of(BROWSER, CHANNEL, HEADLESS, TIMEOUT_MS, VIEWPORT_WIDTH,
             VIEWPORT_HEIGHT, SLOW_MO_MS, EVIDENCE_DIR, TRACE);
-    private static final List<String> OPEN_PREFIXES = List.of(APPS, SECRETS);
+    private static final List<String> OPEN_PREFIXES = List.of(APPS);
+    private static final List<String> APP_KEYS = List.of(URL);
+    private static final List<String> APP_OPEN_PREFIXES = List.of(SECRETS);
     private static final List<String> BROWSERS = List.of("chromium", "firefox", "webkit");
     private static final List<String> CHANNELS = List.of("chrome", "msedge");
     private static final List<String> TRACE_MODES = List.of("off", "on-failure");
@@ -74,6 +77,13 @@ final class UiConfigLoader {
         Section ui = config.section("ui");
         translated(() -> {
             ui.rejectUnknown(KEYS, OPEN_PREFIXES);
+            for (String app : ui.section(APPS).names()) {
+                ui.find(APPS + "." + app).ifPresent(value -> {
+                    throw new ConfigException("'" + ui.path() + "." + APPS + "." + app + "' in " + value.source()
+                            + " is a value: an app is a section with '" + URL + "' and, optionally, '" + SECRETS + "'");
+                });
+                ui.section(APPS + "." + app).rejectUnknown(APP_KEYS, APP_OPEN_PREFIXES);
+            }
             return null;
         });
         UiConfigLoader loader = new UiConfigLoader(ui, xmlParameters, env);
@@ -121,19 +131,21 @@ final class UiConfigLoader {
         return isPresent(named) ? named.trim() : DEFAULT_ENV;
     }
 
-    /** The base URL of the named app ({@code ui.apps.<name>}), for the page that needs it. */
+    /** The base URL of the named app ({@code ui.apps.<name>.url}), for the page that needs it. */
     String appUrl(String app, String pageName) {
-        return translated(() -> ui.require(APPS + "." + app, ", needed by " + pageName).value());
+        return translated(() -> ui.require(APPS + "." + app + "." + URL, ", needed by " + pageName).value());
     }
 
     /**
-     * A secret, read from the environment variable that {@code ui.secrets.<name>} names in the environment's file, so
-     * a test asks for the same name in every environment. The value never appears in a message.
+     * A secret of an app, read from the environment variable that {@code ui.apps.<app>.secrets.<name>} names in the
+     * environment's file, so a test asks for the same name in every environment. The value never appears in a
+     * message.
      */
-    String secret(String name) {
-        String value = translated(() -> ui.secret(name, env));
-        LOG.debug("Secret '{}' read from environment variable {}", name,
-                ui.find(SECRETS + "." + name).map(Setting::value).orElse("?"));
+    String secret(String app, String name) {
+        Section section = ui.section(APPS + "." + app);
+        String value = translated(() -> section.secret(name, env));
+        LOG.debug("Secret '{}' of app '{}' read from environment variable {}", name, app,
+                section.find(SECRETS + "." + name).map(Setting::value).orElse("?"));
         return value;
     }
 

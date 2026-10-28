@@ -38,8 +38,8 @@ final class UiContext {
         return config.environment();
     }
 
-    String secret(String name) {
-        return config.secret(name);
+    String secret(String app, String name) {
+        return config.secret(app, name);
     }
 
     static UiContext start(UiConfig config) {
@@ -68,7 +68,7 @@ final class UiContext {
         String app = pageObject.app();
         if (app == null) {
             throw new IllegalStateException(name + " has a path but no app: override app() to name the app whose"
-                    + " app.<name>.url it lives under");
+                    + " ui.apps.<name>.url it lives under");
         }
         String url = PagePath.url(name, config.appUrl(app, name), template, parameters);
         LOG.debug("Opening {} at {}{}", name, url, newTab ? " in a new tab" : "");
@@ -81,10 +81,12 @@ final class UiContext {
         return create(type, page);
     }
 
-    private static <T extends BasePage> T create(Class<T> type, Page page) {
+    private <T extends BasePage> T create(Class<T> type, Page page) {
         try {
             Constructor<T> constructor = type.getConstructor(Page.class);
-            return constructor.newInstance(page);
+            T pageObject = constructor.newInstance(page);
+            pageObject.bind(this);
+            return pageObject;
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(type.getSimpleName() + " needs a public constructor taking a Page", e);
         } catch (InvocationTargetException e) {

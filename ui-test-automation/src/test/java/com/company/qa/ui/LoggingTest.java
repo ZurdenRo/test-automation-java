@@ -77,14 +77,14 @@ class LoggingTest {
     @Test
     void aSecretIsLoggedByItsVariableNeverByItsValue() throws IOException {
         Files.writeString(classpathDir.resolve("test-automation-qa.yaml"),
-                "ui:\n  secrets:\n    admin-password: SHOP_QA_ADMIN_PASSWORD\n");
+                "ui:\n  apps:\n    shop:\n      secrets:\n        password: SHOP_QA_ADMIN_PASSWORD\n");
         Thread.currentThread().setContextClassLoader(
                 new URLClassLoader(new URL[]{classpathDir.toUri().toURL()}, originalLoader));
 
-        UiConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret")).secret("admin-password");
+        UiConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret")).secret("shop", "password");
 
         List<String> debug = messages(Level.DEBUG);
-        assertTrue(debug.contains("Secret 'admin-password' read from environment variable SHOP_QA_ADMIN_PASSWORD"),
+        assertTrue(debug.contains("Secret 'password' of app 'shop' read from environment variable SHOP_QA_ADMIN_PASSWORD"),
                 debug::toString);
         assertFalse(appender.list.stream().anyMatch(e -> e.getFormattedMessage().contains("qa-secret")));
     }

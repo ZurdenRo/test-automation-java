@@ -70,12 +70,13 @@ public abstract class BaseUiTest {
     }
 
     /**
-     * A secret (a user, a password, a key) by name: {@code secret("admin-password")} reads the environment variable
-     * that {@code ui.secrets.admin-password} names in the environment's config file, so the test is the same in every
-     * environment. Pass it to the page object; never log it.
+     * A secret of an app (a user, a password, a key) by name: {@code secret("users", "password")} reads the
+     * environment variable that {@code ui.apps.users.secrets.password} names in the environment's config file, so the
+     * test is the same in every environment. A page object reads its own app's with {@code secret(name)}. Never log
+     * it.
      */
-    protected String secret(String name) {
-        return uiContext.get().secret(name);
+    protected String secret(String app, String name) {
+        return uiContext.get().secret(app, name);
     }
 
     /** Navigates the test's tab to the page object's path and returns the page object. How a test starts. */

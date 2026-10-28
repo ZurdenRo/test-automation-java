@@ -33,7 +33,7 @@ class SettingsTest {
 
     @Test
     void theViewportComesFromTheConfig() {
-        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop.url", site.url())
                 .config("viewport.width", "800").config("viewport.height", "600")
                 .run(ChecksViewportTest.class)
                 .assertAllPassed();
@@ -41,7 +41,7 @@ class SettingsTest {
 
     @Test
     void theTimeoutBoundsHowLongAnActionWaits() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop.url", site.url())
                 .config("timeout-ms", "300")
                 .run(ClicksWhatIsNotThereTest.class);
 
@@ -51,7 +51,7 @@ class SettingsTest {
 
     @Test
     void eachXmlTestRunsInTheBrowserItsParametersName() {
-        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+        ConsumerRun.Results results = ConsumerRun.in(classpathDir).config("apps.shop.url", site.url())
                 .xmlTest("on chromium", Map.of("browser", "chromium"))
                 .xmlTest("on firefox", Map.of("browser", "firefox"))
                 .run(ChecksBrowserTest.class)
@@ -63,7 +63,7 @@ class SettingsTest {
     @Test
     void theSuiteNamesTheConfigOfItsEnvironment() {
         ConsumerRun.in(classpathDir)
-                .resource("test-automation-staging.yaml", ConsumerRun.uiYaml(Map.of("apps.shop", site.url(),
+                .resource("test-automation-staging.yaml", ConsumerRun.uiYaml(Map.of("apps.shop.url", site.url(),
                         "viewport.width", "640", "viewport.height", "480")))
                 .suiteParameter("env", "staging")
                 .run(RunsOnStagingTest.class)
