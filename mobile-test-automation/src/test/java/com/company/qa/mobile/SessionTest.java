@@ -58,8 +58,8 @@ class SessionTest {
     @Test
     void anAppAlreadyInstalledIsOpenedByItsPackage() {
         ConsumerRun run = ConsumerRun.in(classpathDir)
-                .config("appium.server.url", appium.url())
-                .config("android.app.package", "com.jeffprod.todo")
+                .config("appium-server-url", appium.url())
+                .config("android.app-package", "com.jeffprod.todo")
                 .config("android.devices", "emulator-5554");
 
         run.run(TwoTestsTest.class).assertAllPassed();
@@ -97,9 +97,9 @@ class SessionTest {
 
     @Test
     void aSessionThatCannotStartSaysWhichDeviceAndServerAndFreesTheDevice() throws IOException {
-        Files.writeString(classpathDir.resolve("mobile-test-qa.properties"), "appium.server.url=" + appium.url()
-                + "\nandroid.app=/apps/ApiDemos-debug.apk\nandroid.devices=emulator-5554\n"
-                + "device.wait.timeout.ms=1000\n");
+        Files.writeString(classpathDir.resolve("test-automation-qa.yaml"), ConsumerRun.mobileYaml(Map.of(
+                "appium-server-url", appium.url(), "android.app", "/apps/ApiDemos-debug.apk",
+                "android.devices", "emulator-5554", "device-wait-timeout-ms", "1000")));
         Thread.currentThread().setContextClassLoader(
                 new URLClassLoader(new URL[]{classpathDir.toUri().toURL()}, originalLoader));
         MobileConfig config = MobileConfigLoader.load(Map.of());
@@ -126,7 +126,7 @@ class SessionTest {
     void waitUntilFailsWithATimeoutAfterTheConfiguredTime() {
         long start = System.nanoTime();
 
-        ConsumerRun.Results results = run().config("wait.until.timeout.ms", "700").run(WaitsTest.class);
+        ConsumerRun.Results results = run().config("wait-until-timeout-ms", "700").run(WaitsTest.class);
 
         assertTrue(results.failure("waitsForWhatNeverComes") instanceof TimeoutException,
                 results::summary);
@@ -150,7 +150,7 @@ class SessionTest {
                 .suiteParameter("env", "prod")
                 .run(TwoTestsTest.class);
 
-        assertTrue(results.summary().contains("mobile-test-prod.properties"), results::summary);
+        assertTrue(results.summary().contains("test-automation-prod.yaml"), results::summary);
         assertEquals(0, appium.sessionsCreated());
     }
 
@@ -160,7 +160,7 @@ class SessionTest {
 
     private ConsumerRun run(String devices) {
         return ConsumerRun.in(classpathDir)
-                .config("appium.server.url", appium.url())
+                .config("appium-server-url", appium.url())
                 .config("android.app", "/apps/ApiDemos-debug.apk")
                 .config("android.devices", devices);
     }

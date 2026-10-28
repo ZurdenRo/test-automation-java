@@ -27,7 +27,7 @@ public abstract class BaseScreen {
     /**
      * Waits, polling, until the condition returns something truthy (not null or false) and returns it; an element
      * not found yet counts as "not yet". Fails with Selenium's {@code TimeoutException} after
-     * {@code wait.until.timeout.ms}. The implicit wait is 0, so this is the only waiting there is. Selenium's
+     * {@code wait-until-timeout-ms}. The implicit wait is 0, so this is the only waiting there is. Selenium's
      * {@code ExpectedConditions} fit as they are, {@code waitUntil(elementToBeClickable(SAVE)).click()}, and a
      * lambda covers the rest: {@code waitUntil(d -> d.findElements(ROWS).size() > 2)}.
      */

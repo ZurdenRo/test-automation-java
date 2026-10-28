@@ -39,7 +39,7 @@ final class MobileSession {
 
     /** Takes a free device, waiting for one, and starts a session on it. */
     static MobileSession start(MobileConfig config) {
-        String devices = config.platform().key() + "." + MobileConfigLoader.DEVICES;
+        String devices = "mobile." + config.platform().key() + "." + MobileConfigLoader.DEVICES;
         DevicePool pool = DevicePool.of(devices, config.appiumServerUrl(), config.devices());
         String serial = pool.acquire(config.deviceWaitTimeoutMs());
         AppiumDriver driver = null;

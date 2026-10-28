@@ -16,8 +16,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SecretsTest {
 
-    private static final String BASE = "appium.server.url=http://localhost:4723\n"
-            + "android.app=/a.apk\nandroid.devices=emulator-5554\n";
+    private static final String BASE = "mobile:\n  appium-server-url: http://localhost:4723\n  android:\n"
+            + "    app: /a.apk\n    devices: [emulator-5554]\n";
+    private static final String QA_SECRET = BASE + "  secrets:\n    admin-password: SHOP_QA_ADMIN_PASSWORD\n";
+    private static final String DEV_SECRET = BASE + "  secrets:\n    admin-password: SHOP_DEV_ADMIN_PASSWORD\n";
 
     @TempDir
     Path classpathDir;
@@ -31,50 +33,50 @@ class SecretsTest {
 
     @Test
     void theEnvironmentsFileNamesTheVariableThatHoldsTheSecret() throws IOException {
-        write("mobile-test-qa.properties", BASE + "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
 
         MobileConfig config = MobileConfigLoader.load(Map.of(),
                 Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret", "SHOP_DEV_ADMIN_PASSWORD", "dev-secret"));
 
-        assertEquals("qa-secret", config.secret("admin.password"));
+        assertEquals("qa-secret", config.secret("admin-password"));
     }
 
     @Test
     void theSameSecretNameReadsAnotherVariableInAnotherEnvironment() throws IOException {
-        write("mobile-test-qa.properties", BASE + "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
-        write("mobile-test-dev.properties", BASE + "secret.admin.password=SHOP_DEV_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
+        write("test-automation-dev.yaml", DEV_SECRET);
 
         MobileConfig config = MobileConfigLoader.load(Map.of("env", "dev"),
                 Map.of("SHOP_QA_ADMIN_PASSWORD", "qa-secret", "SHOP_DEV_ADMIN_PASSWORD", "dev-secret"));
 
-        assertEquals("dev-secret", config.secret("admin.password"));
+        assertEquals("dev-secret", config.secret("admin-password"));
     }
 
     @Test
     void aSecretTheFileDoesNotNameSaysWhichKeyToAdd() throws IOException {
-        write("mobile-test-qa.properties", BASE);
+        write("test-automation-qa.yaml", BASE);
         MobileConfig config = MobileConfigLoader.load(Map.of(), Map.of());
 
-        MobileConfigException e = assertThrows(MobileConfigException.class, () -> config.secret("admin.password"));
+        MobileConfigException e = assertThrows(MobileConfigException.class, () -> config.secret("admin-password"));
 
-        assertEquals("Missing 'secret.admin.password' in mobile-test-qa.properties: it names the environment"
-                + " variable that holds secret 'admin.password'", e.getMessage());
+        assertEquals("Missing 'mobile.secrets.admin-password' in test-automation-qa.yaml: it names the environment"
+                + " variable that holds secret 'admin-password'", e.getMessage());
     }
 
     @Test
     void anUnsetVariableNamesItButNeverAValue() throws IOException {
-        write("mobile-test-qa.properties", BASE + "secret.admin.password=SHOP_QA_ADMIN_PASSWORD\n");
+        write("test-automation-qa.yaml", QA_SECRET);
         MobileConfig config = MobileConfigLoader.load(Map.of(), Map.of("SHOP_QA_ADMIN_PASSWORD", " "));
 
-        MobileConfigException e = assertThrows(MobileConfigException.class, () -> config.secret("admin.password"));
+        MobileConfigException e = assertThrows(MobileConfigException.class, () -> config.secret("admin-password"));
 
-        assertEquals("Secret 'admin.password' needs environment variable SHOP_QA_ADMIN_PASSWORD, which is not set"
-                + " (blank values count as missing; mobile-test-qa.properties names it)", e.getMessage());
+        assertEquals("Secret 'admin-password' needs environment variable SHOP_QA_ADMIN_PASSWORD, which is not set"
+                + " (blank values count as missing; test-automation-qa.yaml names it)", e.getMessage());
     }
 
     @Test
     void aSettingCannotBeOverriddenByAnEnvironmentVariable() throws IOException {
-        write("mobile-test-qa.properties", BASE);
+        write("test-automation-qa.yaml", BASE);
 
         MobileConfig config = MobileConfigLoader.load(Map.of(),
                 Map.of("APPIUM_SERVER_URL", "http://evil:4723", "QA_MOBILE_WAIT_UNTIL_TIMEOUT_MS", "1"));

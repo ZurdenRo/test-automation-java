@@ -40,36 +40,39 @@ test {
 
 ## Configure an environment
 
-Each environment has its own file on the test classpath, `src/test/resources/mobile-test-<env>.properties`. The suite parameter `env` picks the file, and `qa` is the default. Keys that belong to one platform start with its name (`android.`).
+Settings live in YAML on the test classpath (`src/test/resources`), under the `mobile` section: `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares. Other modules read their own sections of the same files. The suite parameter `env` picks the environment, and `qa` is the default. Keys that belong to one platform nest under its name (`android`).
 
-```properties
-# src/test/resources/mobile-test-qa.properties
-appium.server.url=http://localhost:4723
+```yaml
+# src/test/resources/test-automation-qa.yaml
+mobile:
+  appium-server-url: http://localhost:4723
 
-# The app: an APK the Appium server can read (a path on the server's machine, or a URL)...
-android.app=https://github.com/appium/android-apidemos/releases/download/v6.0.18/ApiDemos-debug.apk
-# ...or a package that is already installed on the devices (set one of the two, not both)
-#android.app.package=com.jeffprod.todo
+  android:
+    # The app: an APK the Appium server can read (a path on the server's machine, or a URL)...
+    app: https://github.com/appium/android-apidemos/releases/download/v6.0.18/ApiDemos-debug.apk
+    # ...or a package that is already installed on the devices (set one of the two, not both)
+    # app-package: com.jeffprod.todo
 
-# The serials `adb devices` lists, separated by commas; each runs one test at a time
-android.devices=emulator-5554
+    # The serials `adb devices` lists; each runs one test at a time
+    devices: [emulator-5554]
 
-# Secrets: the file names the environment variable, never the value
-secret.admin.password=TODO_ADMIN_PASSWORD
+  # Secrets: the file names the environment variable, never the value
+  secrets:
+    admin-password: TODO_ADMIN_PASSWORD
 ```
 
-| Key | Required | Default | What it is |
+| Key under `mobile` | Required | Default | What it is |
 |---|---|---|---|
-| `appium.server.url` | yes | | The Appium server's `http` or `https` URL |
+| `appium-server-url` | yes | | The Appium server's `http` or `https` URL |
 | `android.app` | one of the two | | APK to install: a path on the server's machine, or a URL |
-| `android.app.package` | one of the two | | Package already installed on the devices |
-| `android.devices` | yes | | Device serials, separated by commas, without repeats |
-| `wait.until.timeout.ms` | no | `10000` | How long `waitUntil` waits before it fails |
-| `device.wait.timeout.ms` | no | `600000` | How long a test waits for a free device |
-| `evidence.dir` | no | `mobile-evidence` | Where failure evidence goes, relative to the working directory |
-| `secret.<name>` | no | | The environment variable that holds secret `<name>` |
+| `android.app-package` | one of the two | | Package already installed on the devices |
+| `android.devices` | yes | | A list of device serials, without repeats |
+| `wait-until-timeout-ms` | no | `10000` | How long `waitUntil` waits before it fails |
+| `device-wait-timeout-ms` | no | `600000` | How long a test waits for a free device |
+| `evidence-dir` | no | `mobile-evidence` | Where failure evidence goes, relative to the working directory |
+| `secrets.<name>` | no | | The environment variable that holds secret `<name>` |
 
-Settings come only from this file. Environment variables hold secrets and nothing else ([root ADR-0001](../docs/adr/0001-environment-variables-hold-secrets-only.md)). A missing or wrong setting fails the test with a message that names the key and the file.
+Settings come only from these files. Environment variables hold secrets and nothing else ([root ADR-0001](../docs/adr/0001-environment-variables-hold-secrets-only.md)). A missing or wrong setting, and a key that is not in the table, fail the test with a message that names the key and the file.
 
 The app's data is cleared before every test (`noReset=false`), so each test starts from the app's first screen. The server installs an APK set with `android.app` if it is not on the device yet, and does not uninstall it between tests.
 
@@ -77,7 +80,7 @@ The app's data is cleared before every test (`noReset=false`), so each test star
 
 A screen extends `BaseScreen` and keeps the driver to itself. Use `AndroidScreen` when the screen needs something that only Android offers, such as `currentActivity()`, key events or UiAutomator selectors. A screen that extends only `BaseScreen` stays portable to iOS.
 
-The implicit wait is 0, so wait explicitly with `waitUntil`. It takes Selenium's `ExpectedConditions` as they are, or a lambda for anything else, and it fails with a `TimeoutException` after `wait.until.timeout.ms`.
+The implicit wait is 0, so wait explicitly with `waitUntil`. It takes Selenium's `ExpectedConditions` as they are, or a lambda for anything else, and it fails with a `TimeoutException` after `wait-until-timeout-ms`.
 
 ```java
 // HomeScreen.java
@@ -158,7 +161,7 @@ public class ViewsTest extends BaseMobileTest {
 }
 ```
 
-`secret("admin.password")` returns the value of the environment variable that `secret.admin.password` names. Pass it to a screen, and never log it. `environment()` returns the suite's `env`, so a service client can read its own file for the same environment.
+`secret("admin-password")` returns the value of the environment variable that `mobile.secrets.admin-password` names. Pass it to a screen, and never log it. `environment()` returns the suite's `env`, so a service client reads its section for the same environment.
 
 The suite picks the environment and the platform once, with two parameters. To run methods in parallel, list one device per thread. A thread that finds no free device waits for one.
 
@@ -207,7 +210,7 @@ docker run -d --name android --device /dev/kvm -p 4723:4723 \
 docker exec android adb devices             # emulator-5554 once it has booted
 ```
 
-Inside the container, the Appium server reads the APK from its own file system. So `android.app` is the path in the container, such as `/apk/my-app.apk` from the volume above, or a URL.
+Inside the container, the Appium server reads the APK from its own file system. So `mobile.android.app` is the path in the container, such as `/apk/my-app.apk` from the volume above, or a URL.
 
 **An app that is already installed.** Install it once, and point the config at its package instead of an APK:
 
@@ -215,8 +218,10 @@ Inside the container, the Appium server reads the APK from its own file system. 
 adb -s emulator-5554 install ToDo_1.24.apk
 ```
 
-```properties
-android.app.package=com.jeffprod.todo
+```yaml
+mobile:
+  android:
+    app-package: com.jeffprod.todo
 ```
 
 The library opens the app's launcher activity. It clears the app's data before every test, but it never uninstalls the app.

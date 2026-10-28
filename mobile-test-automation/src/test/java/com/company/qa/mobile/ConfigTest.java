@@ -15,11 +15,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigTest {
 
-    private static final String MINIMAL = "appium.server.url=http://localhost:4723\n"
-            + "android.app=/apps/ApiDemos-debug.apk\nandroid.devices=emulator-5554\n";
+    private static final String MINIMAL = "mobile:\n  appium-server-url: http://localhost:4723\n  android:\n"
+            + "    app: /apps/ApiDemos-debug.apk\n    devices: [emulator-5554]\n";
 
     @TempDir
     Path classpathDir;
@@ -44,8 +45,9 @@ class ConfigTest {
 
     @Test
     void theFileSetsEverySetting() throws Exception {
-        MobileConfig config = load("appium.server.url=https://farm.example:443/wd/hub\nwait.until.timeout.ms=500\ndevice.wait.timeout.ms=7000\nevidence.dir=out/evidence\n"
-                + "android.app=/apps/shop.apk\nandroid.devices= emulator-5554 , emulator-5556 ,\n", Map.of());
+        MobileConfig config = load("mobile:\n  appium-server-url: https://farm.example:443/wd/hub\n  wait-until-timeout-ms: 500\n"
+                + "  device-wait-timeout-ms: 7000\n  evidence-dir: out/evidence\n  android:\n"
+                + "    app: /apps/shop.apk\n    devices: [ emulator-5554 , emulator-5556 , '' ]\n", Map.of());
 
         assertEquals("https://farm.example:443/wd/hub", config.appiumServerUrl().toString());
         assertEquals(500, config.waitUntilTimeoutMs());
@@ -58,24 +60,24 @@ class ConfigTest {
 
     @Test
     void theAppCanBeAnAlreadyInstalledPackage() throws Exception {
-        MobileConfig config = load("appium.server.url=http://localhost:4723\n"
-                + "android.app.package=com.jeffprod.todo\nandroid.devices=emulator-5554\n", Map.of());
+        MobileConfig config = load("mobile:\n  appium-server-url: http://localhost:4723\n  android:\n"
+                + "    app-package: com.jeffprod.todo\n    devices: [emulator-5554]\n", Map.of());
 
         assertNull(config.app());
         assertEquals("com.jeffprod.todo", config.appPackage());
     }
 
     @Test
-    void theDefaultFileIsTheQaOne() throws Exception {
-        write("mobile-test-qa.properties", MINIMAL);
+    void theDefaultEnvironmentsFileIsTheQaOne() throws Exception {
+        write("test-automation-qa.yaml", MINIMAL);
 
         assertEquals("qa", MobileConfigLoader.load(Map.of()).environment());
     }
 
     @Test
     void theSuiteNamesItsEnvironmentAndItsFileFollows() throws Exception {
-        write("mobile-test-qa.properties", MINIMAL);
-        write("mobile-test-staging.properties", MINIMAL.replace("localhost", "staging-appium"));
+        write("test-automation-qa.yaml", MINIMAL);
+        write("test-automation-staging.yaml", MINIMAL.replace("localhost", "staging-appium"));
 
         MobileConfig config = MobileConfigLoader.load(Map.of("env", "staging"));
 
@@ -84,12 +86,33 @@ class ConfigTest {
     }
 
     @Test
-    void thePlatformParameterPicksWhichKeysAreRead() throws Exception {
-        MobileConfig config = load(MINIMAL + "ios.app=/apps/shop.ipa\nios.devices=iPhone 15\n",
-                Map.of("platform", "ANDROID"));
+    void thePlatformParameterPicksWhichNestedKeysAreRead() throws Exception {
+        MobileConfig config = load(MINIMAL, Map.of("platform", "ANDROID"));
 
         assertEquals(Platform.ANDROID, config.platform());
         assertEquals("/apps/ApiDemos-debug.apk", config.app());
+    }
+
+    @Test
+    void theKeysOfAPlatformThatIsNotSupportedYetAreUnknown() {
+        MobileConfigException e = assertThrows(MobileConfigException.class,
+                () -> load(MINIMAL + "  ios:\n    app: /apps/shop.ipa\n", Map.of()));
+
+        assertTrue(e.getMessage().startsWith("Unknown key 'mobile.ios.app' in test-automation-qa.yaml"),
+                e.getMessage());
+    }
+
+    @Test
+    void theEnvironmentsFileLaysOverTheSharedOne() throws Exception {
+        write("test-automation.yaml", MINIMAL + "  wait-until-timeout-ms: 500\n");
+        write("test-automation-staging.yaml", "mobile:\n  appium-server-url: http://staging-appium:4723\n"
+                + "  android:\n    devices: [emulator-5556]\n");
+
+        MobileConfig config = MobileConfigLoader.load(Map.of("env", "staging"));
+
+        assertEquals("http://staging-appium:4723", config.appiumServerUrl().toString());
+        assertEquals(500, config.waitUntilTimeoutMs());
+        assertEquals(List.of("emulator-5556"), config.devices());
     }
 
     @Test
@@ -104,9 +127,9 @@ class ConfigTest {
     @Test
     void aMissingServerUrlNamesTheFileToAddItTo() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load("android.app=/a.apk\nandroid.devices=emulator-5554\n", Map.of()));
+                () -> load("mobile:\n  android:\n    app: /a.apk\n    devices: [emulator-5554]\n", Map.of()));
 
-        assertEquals("Missing 'appium.server.url' in mobile-test-qa.properties (blank values count as missing)",
+        assertEquals("Missing 'mobile.appium-server-url' in test-automation-qa.yaml (blank values count as missing)",
                 e.getMessage());
     }
 
@@ -115,16 +138,16 @@ class ConfigTest {
         MobileConfigException e = assertThrows(MobileConfigException.class,
                 () -> load(MINIMAL.replace("http://localhost:4723", "localhost:4723"), Map.of()));
 
-        assertEquals("'appium.server.url' from mobile-test-qa.properties is 'localhost:4723': expected an http or"
+        assertEquals("'mobile.appium-server-url' in test-automation-qa.yaml is 'localhost:4723': expected an http or"
                 + " https URL", e.getMessage());
     }
 
     @Test
     void anAppIsRequiredAsAnApkOrAnInstalledPackage() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load("appium.server.url=http://localhost:4723\nandroid.devices=emulator-5554\n", Map.of()));
+                () -> load("mobile:\n  appium-server-url: http://localhost:4723\n  android:\n    devices: [emulator-5554]\n", Map.of()));
 
-        assertEquals("Missing 'android.app' or 'android.app.package' in mobile-test-qa.properties: the app under"
+        assertEquals("Missing 'mobile.android.app' or 'mobile.android.app-package' in test-automation-qa.yaml: the app under"
                 + " test is an APK to install or a package already installed (blank values count as missing)",
                 e.getMessage());
     }
@@ -132,51 +155,51 @@ class ConfigTest {
     @Test
     void anApkAndAnInstalledPackageTogetherAreAmbiguous() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL + "android.app.package=com.jeffprod.todo\n", Map.of()));
+                () -> load(MINIMAL + "    app-package: com.jeffprod.todo\n", Map.of()));
 
-        assertEquals("Both 'android.app' and 'android.app.package' are set in mobile-test-qa.properties: the app is"
+        assertEquals("Both 'mobile.android.app' and 'mobile.android.app-package' are set in test-automation-qa.yaml: the app is"
                 + " either an APK to install or a package already installed", e.getMessage());
     }
 
     @Test
     void aMissingDeviceListSaysWhereToGetTheSerials() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load("appium.server.url=http://localhost:4723\nandroid.app=/a.apk\n", Map.of()));
+                () -> load("mobile:\n  appium-server-url: http://localhost:4723\n  android:\n    app: /a.apk\n", Map.of()));
 
-        assertEquals("Missing 'android.devices' in mobile-test-qa.properties: the serials `adb devices` lists,"
-                + " separated by commas (blank values count as missing)", e.getMessage());
+        assertEquals("Missing 'mobile.android.devices' in test-automation-qa.yaml: the serials `adb devices` lists,"
+                + " as a list (blank values count as missing)", e.getMessage());
     }
 
     @Test
     void aRepeatedSerialIsRejectedBecauseOneDeviceServesOneSession() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL.replace("emulator-5554", "emulator-5554,emulator-5554"), Map.of()));
+                () -> load(MINIMAL.replace("[emulator-5554]", "[emulator-5554, emulator-5554]"), Map.of()));
 
-        assertEquals("'android.devices' from mobile-test-qa.properties is 'emulator-5554,emulator-5554': expected"
-                + " device serials separated by commas, without repeats", e.getMessage());
+        assertEquals("'mobile.android.devices' in test-automation-qa.yaml is 'emulator-5554, emulator-5554': expected"
+                + " device serials without repeats", e.getMessage());
     }
 
     @Test
     void aNonNumericWaitTimeoutSaysWhereItCameFrom() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL + "wait.until.timeout.ms=soon\n", Map.of()));
+                () -> load(MINIMAL + "  wait-until-timeout-ms: soon\n", Map.of()));
 
-        assertEquals("'wait.until.timeout.ms' from mobile-test-qa.properties is 'soon': expected a positive whole number",
+        assertEquals("'mobile.wait-until-timeout-ms' in test-automation-qa.yaml is 'soon': expected a positive whole number",
                 e.getMessage());
     }
 
     @Test
     void aZeroWaitTimeoutIsRejected() {
         MobileConfigException e = assertThrows(MobileConfigException.class,
-                () -> load(MINIMAL + "wait.until.timeout.ms=0\n", Map.of()));
+                () -> load(MINIMAL + "  wait-until-timeout-ms: 0\n", Map.of()));
 
-        assertEquals("'wait.until.timeout.ms' from mobile-test-qa.properties is '0': expected a positive whole number",
+        assertEquals("'mobile.wait-until-timeout-ms' in test-automation-qa.yaml is '0': expected a positive whole number",
                 e.getMessage());
     }
 
     @Test
     void xmlParametersOtherThanEnvAndPlatformAreIgnored() throws Exception {
-        MobileConfig config = load(MINIMAL, Map.of("wait.until.timeout.ms", "900", "appium.server.url", "http://xml"));
+        MobileConfig config = load(MINIMAL, Map.of("wait-until-timeout-ms", "900", "appium-server-url", "http://xml"));
 
         assertEquals(10_000, config.waitUntilTimeoutMs());
         assertEquals("http://localhost:4723", config.appiumServerUrl().toString());
@@ -189,7 +212,7 @@ class ConfigTest {
         MobileConfigException e = assertThrows(MobileConfigException.class,
                 () -> MobileConfigLoader.load(Map.of("env", "prod")));
 
-        assertEquals("Config resource 'mobile-test-prod.properties' (for <parameter> env 'prod') not found on the"
+        assertEquals("Config file 'test-automation-prod.yaml' (for <parameter> env 'prod') not found on the"
                 + " classpath", e.getMessage());
     }
 
@@ -199,12 +222,12 @@ class ConfigTest {
 
         MobileConfigException e = assertThrows(MobileConfigException.class, () -> MobileConfigLoader.load(Map.of()));
 
-        assertEquals("Config resource 'mobile-test-qa.properties' (for env 'qa', the default; name another with"
+        assertEquals("Config file 'test-automation-qa.yaml' (for env 'qa', the default; name another with"
                 + " <parameter> env) not found on the classpath", e.getMessage());
     }
 
     private MobileConfig load(String file, Map<String, String> xmlParameters) throws IOException {
-        write("mobile-test-qa.properties", file);
+        write("test-automation-qa.yaml", file);
         return MobileConfigLoader.load(xmlParameters);
     }
 

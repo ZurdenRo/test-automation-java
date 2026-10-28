@@ -49,7 +49,7 @@ The application under test, given as an APK (a path the Appium server can read, 
 _Avoid_: Build, binary, artifact
 
 **Environment**:
-One deployment of the app's backends (QA, staging), described by its own config file, `mobile-test-<env>.properties`. A suite names its environment once, with the `env` parameter, and runs against it; QA is the default.
+One deployment of the app's backends (QA, staging), described by its own config file, `test-automation-<env>.yaml`, over the shared `test-automation.yaml` (root `docs/adr/0005`). A suite names its environment once, with the `env` parameter, and runs against it; QA is the default.
 _Avoid_: Stage, profile, target
 
 **Secret**:
