@@ -35,7 +35,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId = 'com.company.qa'
-            artifactId = 'config-test-automation'
+            artifactId = 'config-loader'
             from components.java
         }
     }

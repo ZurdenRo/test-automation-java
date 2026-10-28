@@ -1,4 +1,4 @@
-# Config Test Automation
+# Config Loader
 
 An internal library that reads a test run's settings from YAML for http, ui and mobile, so that the three behave the same. Consumers never import it.
 
