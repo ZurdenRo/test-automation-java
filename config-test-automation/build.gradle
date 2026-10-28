@@ -1,0 +1,52 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'com.company.qa'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Reads the YAML (1.2); no type of it is part of the API (root ADR-0006).
+    implementation libs.snakeyaml.engine
+    // Logs through SLF4J; the consumer's backend (Logback, Log4j) decides levels and where they go.
+    implementation libs.slf4j.api
+
+    testImplementation libs.junit.jupiter
+    testImplementation libs.logback.classic
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.company.qa'
+            artifactId = 'config-test-automation'
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
+            credentials {
+                username = System.getenv("MY_USER")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}

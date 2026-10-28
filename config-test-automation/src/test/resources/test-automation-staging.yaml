@@ -1,0 +1,3 @@
+services:
+  users:
+    base-url: https://users.staging

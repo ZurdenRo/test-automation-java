@@ -28,7 +28,7 @@ jobs:
 
     # Builds and runs the tests; the modules are not published for now.
     - name: Build and test
-      run: ./gradlew :http-test-automation:build :ui-test-automation:build :mobile-test-automation:build
+      run: ./gradlew :config-test-automation:build :http-test-automation:build :ui-test-automation:build :mobile-test-automation:build
 
   # The mobile module against a real emulator and Appium server, both in one container (mobile ADR-0003).
   mobile-integration:
