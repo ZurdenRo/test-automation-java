@@ -37,7 +37,7 @@ One deployment of the apps under test (QA, staging), described by its own config
 _Avoid_: Stage, profile, target
 
 **Secret**:
-A user, password or key a test needs. It lives only in an environment variable; the environment's config file holds the variable's name, never the value, and a test asks for the secret by a name that is the same in every environment.
+A user, password or key of one app a test needs. It lives only in an environment variable; the environment's config file holds the variable's name under the app (`ui.apps.<app>.secrets`), never the value, and a page object or a test asks for the secret by a name that is the same in every environment.
 _Avoid_: Credential, sensitive setting
 
 **Path**:

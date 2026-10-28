@@ -15,7 +15,7 @@ public abstract class ShopPage extends BasePage {
 
     @Override
     protected String app() {
-        return "shop";                        // its base URL is ui.apps.shop
+        return "shop";                        // its base URL is ui.apps.shop.url
     }
 }
 
@@ -98,14 +98,16 @@ Each test method gets a fresh browser context (cookies, storage, tabs), so tests
 
 ## Apps
 
-Each app has a name and a base URL in the config; each page object with a path names its app with `app()`:
+Each app has a name and, under it, its base URL and its secrets (see below) in the config; each page object with a path names its app with `app()`:
 
 ```yaml
 # test-automation-qa.yaml
 ui:
   apps:
-    shop: https://shop.example.com
-    billing: https://billing.example.com
+    shop:
+      url: https://shop.example.com
+    billing:
+      url: https://billing.example.com
 ```
 
 A test moves between apps by opening their pages, in one tab or in several. Since hosts live only in the config, switching environments moves them all. Opening a page with a path but no app fails, naming the page.
@@ -151,7 +153,8 @@ Environment variables are not read for settings: they are for secrets only. A ke
 
 | Key under `ui` | Default | |
 |---|---|---|
-| `apps.<name>` | | The base URL of an app; needed only when a test opens one of its pages. |
+| `apps.<app>.url` | | The base URL of an app; needed only when a test opens one of its pages. |
+| `apps.<app>.secrets.<name>` | | The environment variable that holds a secret of that app. |
 | `browser` | `chromium` | `chromium`, `firefox` or `webkit` (Safari's engine). |
 | `channel` | | `chrome` or `msedge`: the browser installed on the machine instead of Playwright's. |
 | `headless` | `true` | |
@@ -172,34 +175,63 @@ The same suite in two browsers in one run:
 
 ## Secrets
 
-Users, passwords and keys live in environment variables, never in a YAML file. Each environment's file names the variable that holds each secret under `ui.secrets`, and the test asks for the secret by that name, the same in every environment:
+Users, passwords and keys live in environment variables, never in a YAML file. Each environment's file names the variable that holds each secret under its app, and the page or the test asks for the secret by that name, the same in every environment:
 
 ```yaml
 # test-automation-qa.yaml
 ui:
-  secrets:
-    admin-user: SHOP_QA_ADMIN_USER
-    admin-password: SHOP_QA_ADMIN_PASSWORD
+  apps:
+    shop:
+      url: https://shop.qa.example.com
+      secrets:
+        user: SHOP_QA_USER
+        password: SHOP_QA_PASSWORD
+    billing:
+      url: https://billing.qa.example.com
+      secrets:
+        password: BILLING_QA_PASSWORD
 ```
 
 ```yaml
 # test-automation-dev.yaml
 ui:
-  secrets:
-    admin-user: SHOP_DEV_ADMIN_USER
-    admin-password: SHOP_DEV_ADMIN_PASSWORD
+  apps:
+    shop:
+      url: https://shop.dev.example.com
+      secrets:
+        user: SHOP_DEV_USER
+        password: SHOP_DEV_PASSWORD
+```
+
+A page object reads the secrets of its own `app()`, so the test never handles a credential:
+
+```java
+public class LoginPage extends BasePage {
+    public LoginPage(Page page) { super(page); }
+
+    @Override protected String app() { return "shop"; }
+    @Override protected String path() { return "/login"; }
+
+    public void login() {
+        page().getByLabel("User").fill(secret("user"));          // ui.apps.shop.secrets.user
+        page().getByLabel("Password").fill(secret("password"));  // ui.apps.shop.secrets.password
+        page().getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Sign in")).click();
+    }
+}
 ```
 
 ```java
-open(LoginPage.class).loginAs(secret("admin-user"), secret("admin-password"));
+open(LoginPage.class).login();
 ```
 
-A missing `ui.secrets.<name>` key or an unset variable fails the test, naming the key or the variable and never the value. Locally, export the variables (or set them in the IDE's run configuration); on CI, map them from the CI's secret store:
+A test that needs the value itself names the app: `secret("shop", "password")`. Two apps that share a login point at the same variable. A page created with `new` instead of `open(...)` or `on(...)` cannot read secrets: `secret(...)` fails saying so. An app with two roles needs a name for each (`admin-user`, `customer-user`).
+
+A missing `ui.apps.<app>.secrets.<name>` key or an unset variable fails the test, naming the key or the variable and never the value. Locally, export the variables (or set them in the IDE's run configuration); on CI, map them from the CI's secret store:
 
 ```yaml
 env:
-  SHOP_QA_ADMIN_USER: ${{ secrets.SHOP_QA_ADMIN_USER }}
-  SHOP_QA_ADMIN_PASSWORD: ${{ secrets.SHOP_QA_ADMIN_PASSWORD }}
+  SHOP_QA_USER: ${{ secrets.SHOP_QA_USER }}
+  SHOP_QA_PASSWORD: ${{ secrets.SHOP_QA_PASSWORD }}
 ```
 
 ## Failure evidence

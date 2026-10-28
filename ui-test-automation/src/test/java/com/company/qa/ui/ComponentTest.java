@@ -37,7 +37,7 @@ class ComponentTest {
 
     @Test
     void aComponentActsOnlyWithinItsRoot() {
-        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop.url", site.url())
                 .run(ClosesTheSecondOrderTest.class)
                 .assertAllPassed();
     }

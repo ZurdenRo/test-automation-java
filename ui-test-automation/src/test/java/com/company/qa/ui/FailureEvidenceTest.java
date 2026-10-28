@@ -62,7 +62,7 @@ class FailureEvidenceTest {
     }
 
     private void run(String trace, Class<?> test) {
-        ConsumerRun.in(classpathDir).config("apps.shop", site.url())
+        ConsumerRun.in(classpathDir).config("apps.shop.url", site.url())
                 .config("evidence-dir", evidenceDir.toString().replace('\\', '/'))
                 .config("trace", trace)
                 .run(test);

@@ -38,9 +38,9 @@ final class UiConfig {
         return loader.appUrl(app, pageName);
     }
 
-    /** A secret by its name in {@code ui.secrets.<name>}, read from the environment variable the file names. */
-    String secret(String name) {
-        return loader.secret(name);
+    /** A secret of an app by its name in {@code ui.apps.<app>.secrets.<name>}, read from the variable the file names. */
+    String secret(String app, String name) {
+        return loader.secret(app, name);
     }
 
     /** The suite's environment, qa unless {@code <parameter> env} names another. */

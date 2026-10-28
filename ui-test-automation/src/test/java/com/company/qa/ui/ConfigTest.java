@@ -48,7 +48,7 @@ class ConfigTest {
     void theFileSetsEverySetting() throws Exception {
         UiConfig config = load("ui:\n  browser: firefox\n  channel: chrome\n  headless: false\n  timeout-ms: 500\n"
                 + "  viewport: { width: 800, height: 600 }\n  slow-mo-ms: 50\n  evidence-dir: out/evidence\n"
-                + "  trace: on-failure\n  apps:\n    shop: http://shop\n", Map.of());
+                + "  trace: on-failure\n  apps:\n    shop:\n      url: http://shop\n", Map.of());
 
         assertEquals("firefox", config.browser());
         assertEquals("chrome", config.channel());
@@ -112,7 +112,7 @@ class ConfigTest {
 
         UiConfigException e = assertThrows(UiConfigException.class, () -> config.appUrl("billing", "InvoicePage"));
 
-        assertEquals("Missing 'ui.apps.billing' in test-automation-qa.yaml, needed by InvoicePage"
+        assertEquals("Missing 'ui.apps.billing.url' in test-automation-qa.yaml, needed by InvoicePage"
                 + " (blank values count as missing)", e.getMessage());
     }
 
@@ -169,7 +169,7 @@ class ConfigTest {
 
     @Test
     void theEnvironmentsFileLaysOverTheSharedOne() throws Exception {
-        write("test-automation.yaml", "ui:\n  browser: firefox\n  timeout-ms: 500\n  apps:\n    shop: http://shared\n");
+        write("test-automation.yaml", "ui:\n  browser: firefox\n  timeout-ms: 500\n  apps:\n    shop:\n      url: http://shared\n");
         write("test-automation-staging.yaml", "ui:\n  timeout-ms: 900\n");
 
         UiConfig config = UiConfigLoader.load(Map.of("env", "staging"));
@@ -191,8 +191,26 @@ class ConfigTest {
         assertEquals("chromium", load("services:\n  users:\n    base-url: http://u\n", Map.of()).browser());
     }
 
+    @Test
+    void anAppGivenAsAPlainValueFailsSayingItIsASection() {
+        UiConfigException e = assertThrows(UiConfigException.class,
+                () -> load("ui:\n  apps:\n    shop: http://shop\n", Map.of()));
+
+        assertEquals("'ui.apps.shop' in test-automation-qa.yaml is a value: an app is a section with 'url' and,"
+                + " optionally, 'secrets'", e.getMessage());
+    }
+
+    @Test
+    void aMisspelledKeyOfAnAppFailsNamingItAndItsFile() {
+        UiConfigException e = assertThrows(UiConfigException.class,
+                () -> load("ui:\n  apps:\n    shop:\n      urll: http://shop\n", Map.of()));
+
+        assertTrue(e.getMessage().startsWith("Unknown key 'ui.apps.shop.urll' in test-automation-qa.yaml"),
+                e.getMessage());
+    }
+
     private static String apps(String shop) {
-        return "ui:\n  apps:\n    shop: " + shop + "\n";
+        return "ui:\n  apps:\n    shop:\n      url: " + shop + "\n";
     }
 
     private UiConfig load(String file, Map<String, String> xmlParameters) throws IOException {
