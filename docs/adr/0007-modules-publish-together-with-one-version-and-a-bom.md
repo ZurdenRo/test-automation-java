@@ -1,6 +1,6 @@
 # Modules publish together, with one version and a BOM
 
-`config-loader`, `http-test-automation`, `ui-test-automation` and `mobile-test-automation` are published to the same Maven repository (GitHub Packages) under `com.company.qa`, all at the version in `gradle.properties`. Alongside them goes `qa-bom`, a `java-platform` that pins the four.
+`config-loader`, `http-test-automation`, `ui-test-automation` and `mobile-test-automation` are published to the same Maven repository (GitHub Packages) under `com.company.qa`, all at the version in `gradle.properties`. Alongside them goes `test-automation-bom`, a `java-platform` that pins the four.
 
 `config-loader` is published because the other three depend on it (ADR-0006) and that dependency is in their POM and Gradle metadata. It is still internal: it is an `implementation` dependency, so it reaches a consumer's runtime classpath but never the compile one, and a consumer does not declare it.
 
@@ -8,7 +8,7 @@ A consumer states the version once:
 
 ```groovy
 dependencies {
-    testImplementation platform('com.company.qa:qa-bom:1.0.0')
+    testImplementation platform('com.company.qa:test-automation-bom:1.0.0')
     testImplementation 'com.company.qa:ui-test-automation'
 }
 ```
