@@ -1,0 +1,30 @@
+// How a module reaches the repository. Only CI publishes (release workflow); the credentials are the
+// environment variables ORG_GRADLE_PROJECT_GitHubPackagesUsername and ORG_GRADLE_PROJECT_GitHubPackagesPassword.
+plugins {
+    id 'maven-publish'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // A java-platform project (the BOM) publishes its platform component, the others the java one.
+            from components[plugins.hasPlugin('java-platform') ? 'javaPlatform' : 'java']
+            pom {
+                name = project.name
+                description = provider { project.description }
+                url = 'https://github.com/ZurdenRo/test-automation-java'
+                scm {
+                    url = 'https://github.com/ZurdenRo/test-automation-java'
+                    connection = 'scm:git:https://github.com/ZurdenRo/test-automation-java.git'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = providers.gradleProperty('qaRepositoryUrl').get()
+            credentials(PasswordCredentials)
+        }
+    }
+}

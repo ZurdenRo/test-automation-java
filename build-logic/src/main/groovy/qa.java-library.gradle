@@ -1,0 +1,26 @@
+// What every Java module of the framework shares: the toolchain, the publishable jars and the test setup.
+plugins {
+    id 'java-library'
+}
+
+def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+
+java {
+    // Java 11 unless the module says otherwise (mobile needs 17, mobile ADR-0005).
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+    // Consumers get the code and the Javadoc in their IDE.
+    withSourcesJar()
+    withJavadocJar()
+}
+
+dependencies {
+    testImplementation libs.findLibrary('junit-jupiter').get()
+    testImplementation libs.findLibrary('logback-classic').get()
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

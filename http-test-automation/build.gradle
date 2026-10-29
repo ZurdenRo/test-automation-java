@@ -1,14 +1,9 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
+    id 'qa.java-library'
+    id 'qa.publishing'
 }
 
-group = 'com.company.qa'
-version = '1.0.0'
-
-repositories {
-    mavenCentral()
-}
+description = 'Library for talking to HTTP services from tests.'
 
 dependencies {
     implementation libs.httpclient5
@@ -17,44 +12,4 @@ dependencies {
     implementation libs.slf4j.api
     // Reads test-automation.yaml; none of its types is part of the API (root ADR-0006).
     implementation project(':config-loader')
-    testImplementation libs.junit.jupiter
-    testImplementation libs.logback.classic
-
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-// Apply a specific Java toolchain to ease working on different environments.
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
-
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-}
-
-publishing {
-
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = 'com.company.qa'
-            artifactId = 'http-test-automation'
-
-            from components.java
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-                url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
-            credentials {
-
-                username = System.getenv("MY_USER")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }
