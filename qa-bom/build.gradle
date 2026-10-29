@@ -1,0 +1,15 @@
+plugins {
+    id 'java-platform'
+    id 'qa.publishing'
+}
+
+description = 'Bill of materials of the test automation framework: pins every module to one version.'
+
+dependencies {
+    constraints {
+        api project(':config-loader')
+        api project(':http-test-automation')
+        api project(':ui-test-automation')
+        api project(':mobile-test-automation')
+    }
+}

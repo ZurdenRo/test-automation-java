@@ -5,10 +5,21 @@
  * For more detailed information on multi-project builds, please refer to https://docs.gradle.org/8.5/userguide/building_swift_projects.html in the Gradle documentation.
  */
 
+pluginManagement {
+    includeBuild('build-logic')
+}
+
 plugins {
     // Apply the foojay-resolver plugin to allow automatic download of JDKs
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }
 
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'personal-framework-automation'
-include('config-loader', 'http-test-automation', 'ui-test-automation', 'mobile-test-automation')
+include('config-loader', 'http-test-automation', 'ui-test-automation', 'mobile-test-automation', 'qa-bom')

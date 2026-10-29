@@ -1,14 +1,9 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
+    id 'qa.java-library'
+    id 'qa.publishing'
 }
 
-group = 'com.company.qa'
-version = '1.0.0'
-
-repositories {
-    mavenCentral()
-}
+description = 'Library for driving mobile applications from tests, built on Appium.'
 
 dependencies {
     // Public API: screens use Appium directly and wait with Selenium's ExpectedConditions (ADR-0002), and mobile
@@ -20,10 +15,6 @@ dependencies {
     implementation libs.slf4j.api
     // Reads test-automation.yaml; none of its types is part of the API (root ADR-0006).
     implementation project(':config-loader')
-    testImplementation libs.junit.jupiter
-    testImplementation libs.logback.classic
-
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 // Java 17, not 11 like the other modules (ADR-0005).
@@ -31,11 +22,6 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
-}
-
-tasks.named('test') {
-    // The module's own tests are JUnit; they run consumer-shaped TestNG classes programmatically.
-    useJUnitPlatform()
 }
 
 // Tests against a real Appium server and device (ADR-0003): they reuse the unit tests' helpers, are not part of
@@ -61,28 +47,4 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform()
     // Always run: the result depends on the server and the device, which Gradle cannot see.
     outputs.upToDateWhen { false }
-}
-
-publishing {
-
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = 'com.company.qa'
-            artifactId = 'mobile-test-automation'
-
-            from components.java
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
-            credentials {
-
-                username = System.getenv("MY_USER")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }

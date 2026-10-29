@@ -1,14 +1,9 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
+    id 'qa.java-library'
+    id 'qa.publishing'
 }
 
-group = 'com.company.qa'
-version = '1.0.0'
-
-repositories {
-    mavenCentral()
-}
+description = 'Library for driving web applications from tests, built on Playwright.'
 
 dependencies {
     // Both are public API: page objects use Playwright directly (ADR-0001) and UI tests extend a TestNG class (ADR-0002).
@@ -18,21 +13,6 @@ dependencies {
     implementation libs.slf4j.api
     // Reads test-automation.yaml; none of its types is part of the API (root ADR-0006).
     implementation project(':config-loader')
-    testImplementation libs.junit.jupiter
-    testImplementation libs.logback.classic
-
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
-
-tasks.named('test') {
-    // The module's own tests are JUnit; they run consumer-shaped TestNG classes programmatically.
-    useJUnitPlatform()
 }
 
 // Runs Playwright's CLI at the version this module depends on, e.g. in CI:
@@ -40,28 +20,4 @@ tasks.named('test') {
 tasks.register('playwright', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.microsoft.playwright.CLI'
-}
-
-publishing {
-
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = 'com.company.qa'
-            artifactId = 'ui-test-automation'
-
-            from components.java
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-                url = "https://maven.pkg.github.com/ZurdenRo/test-automation-java"
-            credentials {
-
-                username = System.getenv("MY_USER")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }

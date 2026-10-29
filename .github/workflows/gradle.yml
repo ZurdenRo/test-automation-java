@@ -26,9 +26,9 @@ jobs:
     - name: Install Playwright browsers
       run: ./gradlew :ui-test-automation:playwright --args="install --with-deps chromium firefox"
 
-    # Builds and runs the tests; the modules are not published for now.
+    # Builds and runs the tests of every module, the BOM included. Publishing is the release workflow's job.
     - name: Build and test
-      run: ./gradlew :config-loader:build :http-test-automation:build :ui-test-automation:build :mobile-test-automation:build
+      run: ./gradlew build
 
   # The mobile module against a real emulator and Appium server, both in one container (mobile ADR-0003).
   mobile-integration:

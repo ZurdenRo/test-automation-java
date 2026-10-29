@@ -8,3 +8,5 @@ Each module is its own context, with its own language and decisions. Decisions t
 - **Mobile test automation**: `mobile-test-automation/CONTEXT.md`, decisions in `mobile-test-automation/docs/adr/`. A library for driving mobile applications from tests, built on Appium. Android first.
 
 Settings come from YAML (`test-automation.yaml` and `test-automation-<env>.yaml`, `docs/adr/0005`), read by the config module; environment variables hold secrets only (`docs/adr/0001`).
+
+The modules are published together, at one version, with `qa-bom` to pin them (`docs/adr/0007`). A consumer imports `platform('com.company.qa:qa-bom:<version>')` and lists the modules it uses without versions; the repository needs a token with `read:packages`.
