@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'personal-framework-automation'
-include('config-loader', 'http-test-automation', 'ui-test-automation', 'mobile-test-automation', 'qa-bom')
+include('config-loader', 'http-test-automation', 'ui-test-automation', 'mobile-test-automation', 'test-automation-bom')
