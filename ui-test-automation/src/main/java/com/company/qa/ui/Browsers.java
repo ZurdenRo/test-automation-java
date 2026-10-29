@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class Browsers {
 
     private static final Logger LOG = LoggerFactory.getLogger(Browsers.class);
-    private static final ThreadLocal<Launched> BROWSER = new ThreadLocal<>();
-    private static final List<Playwright> LAUNCHED = new CopyOnWriteArrayList<>();
+    private static final ThreadLocal<Launched> THREAD_BROWSERS = new ThreadLocal<>();
+    private static final List<Playwright> ALL_PLAYWRIGHTS = new CopyOnWriteArrayList<>();
     // Bumped when browsers are closed, so a thread does not reuse one closed by an earlier suite in the same JVM.
     private static final AtomicInteger GENERATION = new AtomicInteger();
 
@@ -29,12 +29,12 @@ final class Browsers {
 
     /** The thread's browser for these launch settings; a run whose {@code <test>}s vary them has one per kind. */
     static Browser forThread(UiConfig config) {
-        Launched launched = BROWSER.get();
+        Launched launched = THREAD_BROWSERS.get();
         if (launched == null || launched.generation != GENERATION.get()) {
             Playwright playwright = Playwright.create();
-            LAUNCHED.add(playwright);
+            ALL_PLAYWRIGHTS.add(playwright);
             launched = new Launched(GENERATION.get(), playwright);
-            BROWSER.set(launched);
+            THREAD_BROWSERS.set(launched);
         }
         String kind = config.browser() + "/" + config.channel() + "/" + config.headless() + "/" + config.slowMoMs();
         Playwright playwright = launched.playwright;
@@ -52,10 +52,10 @@ final class Browsers {
     /** Closes every browser launched by any thread. */
     static void closeAll() {
         GENERATION.incrementAndGet();
-        for (Playwright playwright : LAUNCHED) {
+        for (Playwright playwright : ALL_PLAYWRIGHTS) {
             playwright.close();
         }
-        LAUNCHED.clear();
+        ALL_PLAYWRIGHTS.clear();
     }
 
     private static BrowserType type(Playwright playwright, String browser) {
