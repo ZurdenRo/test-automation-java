@@ -125,6 +125,7 @@ public final class Config {
         return entries;
     }
 
+    /** The text of a classpath file, or null when it is not there. */
     private static String readResource(ClassLoader loader, String name) {
         try (InputStream in = loader.getResourceAsStream(name)) {
             if (in == null) {
@@ -136,6 +137,10 @@ public final class Config {
         }
     }
 
+    /**
+     * One file's text as flat entries by path. An empty file gives none; anything but a map of sections, or a section
+     * other than {@link #SECTIONS}, is an error naming {@code file}.
+     */
     private static Map<String, Entry> parse(String file, String yaml) {
         Map<String, Entry> flat = new TreeMap<>();
         if (yaml.lines().allMatch(line -> line.trim().isEmpty() || line.trim().startsWith("#"))) {
@@ -150,7 +155,7 @@ public final class Config {
                     .setLabel(file)
                     .build()).loadFromString(yaml);
         } catch (YamlEngineException e) {
-            throw new ConfigException("Config file '" + file + "' is not valid YAML: " + firstLine(e), e);
+            throw new ConfigException("Config file '" + file + "' is not valid YAML: " + firstLineOfMessage(e), e);
         }
         if (root == null || root instanceof String && ((String) root).trim().isEmpty()) {
             return flat;
@@ -169,6 +174,10 @@ public final class Config {
         return flat;
     }
 
+    /**
+     * Writes the nested {@code map} into {@code out} with each key as its path ({@code ui.viewport.width}). Keys must
+     * be text without dots, and a list only holds plain values; a value that is not present is left out.
+     */
     private static void flatten(String prefix, Map<?, ?> map, String file, Map<String, Entry> out) {
         for (Map.Entry<?, ?> each : map.entrySet()) {
             if (!(each.getKey() instanceof String)) {
@@ -216,6 +225,7 @@ public final class Config {
         }
     }
 
+    /** Whether a value was given: blank, {@code null} and {@code ~} all mean it was not. */
     static boolean isPresent(String value) {
         if (value == null) {
             return false;
@@ -224,7 +234,8 @@ public final class Config {
         return !text.isEmpty() && !text.equals("null") && !text.equals("~");
     }
 
-    private static String firstLine(Exception e) {
+    /** snakeyaml's messages go on for several lines, quoting the YAML around the error: one line is enough here. */
+    private static String firstLineOfMessage(Exception e) {
         String message = e.getMessage() == null ? e.toString() : e.getMessage();
         int end = message.indexOf('\n');
         return end < 0 ? message : message.substring(0, end);
