@@ -46,6 +46,22 @@ class UrlTest {
         }
     }
 
+    @Test
+    void anIllegalUrlIsNamedByItsBaseAndPathWithoutTheQuery() throws Exception {
+        try (TestServer server = pathEchoingServer();
+             HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
+            String expected = "Invalid URL for GET " + server.baseUrl() + "/users/Jose Pérez";
+
+            HttpTransportException fromParams = assertThrows(HttpTransportException.class,
+                    () -> transport.get(HttpRequest.to("/users/Jose Pérez").query("page", "2")));
+            HttpTransportException fromPath = assertThrows(HttpTransportException.class,
+                    () -> transport.get("/users/Jose Pérez?page=2"));
+
+            assertEquals(expected, fromParams.getMessage());
+            assertEquals(expected, fromPath.getMessage());
+        }
+    }
+
     private static TestServer pathEchoingServer() {
         return new TestServer().on("/", ex -> TestServer.respond(ex, 200, ex.getRequestURI().getPath())).start();
     }
