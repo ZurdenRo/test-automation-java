@@ -47,10 +47,11 @@ class UrlTest {
     }
 
     @Test
-    void anIllegalUrlIsNamedByItsBaseAndPathWithoutTheQuery() throws Exception {
+    void anIllegalUrlIsNamedByItsBaseAndPathWithTheReasonButNotTheQuery() throws Exception {
         try (TestServer server = pathEchoingServer();
              HttpTransport transport = new HttpTransportBuilder().baseUrl(server.baseUrl()).build()) {
-            String expected = "Invalid URL for GET " + server.baseUrl() + "/users/Jose Pérez";
+            String url = server.baseUrl() + "/users/Jose Pérez";
+            String expected = "Invalid URL for GET " + url + ": Illegal character in path at index " + url.indexOf(' ');
 
             HttpTransportException fromParams = assertThrows(HttpTransportException.class,
                     () -> transport.get(HttpRequest.to("/users/Jose Pérez").query("page", "2")));

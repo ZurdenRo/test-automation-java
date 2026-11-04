@@ -127,14 +127,16 @@ final class HttpTransport implements Closeable {
     }
 
     /**
-     * Apache rejects an illegal URL with a raw IllegalArgumentException; callers get ours, naming the base URL and path.
-     * The query is left out: {@link QueryParams} are encoded, so they cannot be what made the URL illegal.
+     * Apache rejects an illegal URL with a raw IllegalArgumentException; callers get ours, naming the base URL and path
+     * and why it is illegal. The query is left out, here and from the reason, which would otherwise repeat the whole URL:
+     * {@link QueryParams} are encoded, so they cannot be what made the URL illegal.
      */
     private static HttpUriRequestBase newRequest(String method, String url) {
         try {
             return new HttpUriRequestBase(method, URI.create(url));
         } catch (IllegalArgumentException e) {
-            throw new HttpTransportException("Invalid URL for " + method + " " + withoutQuery(url), e);
+            String reason = e.getMessage().replace(": " + url, "");
+            throw new HttpTransportException("Invalid URL for " + method + " " + withoutQuery(url) + ": " + reason, e);
         }
     }
 
