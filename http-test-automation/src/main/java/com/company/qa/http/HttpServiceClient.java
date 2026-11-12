@@ -13,8 +13,21 @@ public abstract class HttpServiceClient implements Closeable {
     private final HttpTransport transport;
 
     /**
-     * Reads the settings from {@code services.<service>} in the config of {@code environment}: the suite's
-     * {@code env}, which a UI test gets from {@code environment()}.
+     * Reads the settings from {@code services.<service>} in the config of the environment that the running TestNG
+     * {@code <test>} names with {@code <parameter name="env">}, or {@code qa} without one: the same environment its
+     * UI and mobile tests run on.
+     * Create the client in a {@code @BeforeClass} or {@code @BeforeMethod} method, or in a test: TestNG runs no test
+     * while it builds the test class, so a client created in a field initializer or a constructor fails.
+     *
+     * @throws IllegalStateException if no TestNG test or configuration method is running on this thread
+     */
+    protected HttpServiceClient(String service) {
+        this(SuiteEnvironment.builderFor(service));
+    }
+
+    /**
+     * Reads the settings from {@code services.<service>} in the config of {@code environment}, whatever the suite
+     * names: for a client that must run on another environment than its test.
      */
     protected HttpServiceClient(String service, String environment) {
         this(new HttpTransportBuilder().service(service, environment));

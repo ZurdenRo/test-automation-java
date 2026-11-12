@@ -13,7 +13,7 @@ class LoadTest {
 
     @Test
     void readsTheSharedFileAndTheEnvironmentFileFromTheClasspath() {
-        Config config = Config.load("staging", "for <parameter> env 'staging'");
+        Config config = Config.load("staging", null);
 
         assertEquals("staging", config.environment());
         assertEquals(List.of("test-automation.yaml", "test-automation-staging.yaml"), config.files());
@@ -22,12 +22,12 @@ class LoadTest {
     }
 
     @Test
-    void aMissingEnvironmentFileNamesTheFileAndWhereTheEnvironmentCameFrom() {
+    void aMissingEnvironmentFileNamesTheFileAndWhyItWasLookedFor() {
         ConfigException e = assertThrows(ConfigException.class,
-                () -> Config.load("stagin", "for <parameter> env 'stagin'"));
+                () -> Config.load("stagin", "cause: a typo"));
 
-        assertEquals("Config file 'test-automation-stagin.yaml' (for <parameter> env 'stagin') not found on the"
-                + " classpath", e.getMessage());
+        assertEquals("Config file 'test-automation-stagin.yaml' not found on the classpath (cause: a typo)",
+                e.getMessage());
     }
 
     @Test

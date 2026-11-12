@@ -125,18 +125,14 @@ Settings live in YAML on the test classpath (`src/test/resources`), under the `u
 
 So each suite xml points at one environment, and CI picks the environment by picking the xml.
 
-A test that also calls services passes the same environment to their clients, so one parameter moves the whole test:
+A service client built with only its service reads the same parameter, so one parameter moves the whole test. Create it in a `@BeforeClass` or `@BeforeMethod` method, or in the test, not in a field initializer:
 
 ```java
 public class UsersClient extends HttpServiceClient {
-    public UsersClient(String env) {
-        super("users", env);
+    public UsersClient() {
+        super("users");
     }
 }
-```
-
-```java
-UsersClient users = new UsersClient(environment());
 ```
 
 ### Running from the IDE

@@ -7,8 +7,8 @@ Talk to an HTTP service from tests through one pooled connection layer. You writ
 ```java
 public class UsersClient extends HttpServiceClient {
 
-    public UsersClient(String env) {
-        super("users", env);   // services.users in test-automation-<env>.yaml on the classpath
+    public UsersClient() {
+        super("users");   // services.users in test-automation-<env>.yaml, <env> from the TestNG suite
     }
 
     public HttpResponse getUser(int id) {
@@ -73,7 +73,26 @@ The file of another environment (`test-automation-dev.yaml` with `api-token: PAY
 
 ## Configuration
 
-Settings live in YAML on the test classpath (`src/test/resources`): `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares, each service under `services.<name>`. Other modules read their own sections of the same files. A test passes the suite's environment to the client (`new UsersClient(environment())` in a UI test; the library does not know TestNG).
+Settings live in YAML on the test classpath (`src/test/resources`): `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares, each service under `services.<name>`. Other modules read their own sections of the same files. The environment is the running TestNG `<test>`'s: `<parameter name="env" value="staging"/>` in the suite, or `qa` without it, the same one its UI and mobile tests use. Create the client in a `@BeforeClass` or `@BeforeMethod` method, or in a test: in a field initializer or a constructor of the test class no test is running yet, and the client fails saying so.
+
+```java
+public class UsersTest {
+
+    private UsersClient users;
+
+    @BeforeClass
+    public void openClient() {
+        users = new UsersClient();
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void closeClient() throws IOException {
+        users.close();
+    }
+}
+```
+
+To run a client on another environment than its test, name it: `super("users", "qa")`.
 
 ```yaml
 # test-automation.yaml                      # test-automation-qa.yaml

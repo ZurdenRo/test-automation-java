@@ -124,7 +124,7 @@ Everything that fails throws `ConfigException`, unchecked, with a message that n
 ```text
 'ui.timeout-ms' in test-automation-qa.yaml is 'abc': expected a positive whole number
 Unknown key 'ui.heedless' in test-automation-qa.yaml: expected one of browser, timeout-ms, viewport.width, or a name under apps
-Config file 'test-automation-staging.yaml' (for <parameter> env 'staging') not found on the classpath
+Config file 'test-automation-staging.yaml' not found on the classpath (cause: the suite xml sets <parameter name="env" value="staging"/>; add the file or fix the value)
 ```
 
 No type of this module may appear in the public API of the modules that use it. Each one catches `ConfigException` and rethrows its own exception, such as `UiConfigException` (root ADR-0006).
