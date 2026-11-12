@@ -35,8 +35,7 @@ final class UiConfigLoader {
     private static final String URL = "url";
     private static final String SECRETS = "secrets";
 
-    static final String ENV = "env";
-    static final String DEFAULT_ENV = Config.DEFAULT_ENV;
+    static final String ENV = Config.ENV_PARAMETER;
     private static final String RETIRED_CONFIG = "ui.config";
     private static final Logger LOG = LoggerFactory.getLogger(UiConfigLoader.class);
     private static final Set<String> XML_SETTINGS = Set.of(BROWSER, CHANNEL, HEADLESS, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
@@ -70,10 +69,9 @@ final class UiConfigLoader {
 
     /** @param env where secrets are read from, and nothing else */
     static UiConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
-        String environment = environment(xmlParameters);
-        String origin = isPresent(xmlParameters.get(ENV)) ? "for <parameter> " + ENV + " '" + environment + "'"
-                : "for env '" + environment + "', the default; name another with <parameter> " + ENV;
-        Config config = translated(() -> Config.load(environment, origin));
+        String environment = Config.environmentFrom(xmlParameters);
+        String causeMsg = Config.environmentCauseMsg(xmlParameters);
+        Config config = translated(() -> Config.load(environment, causeMsg));
         Section ui = config.section("ui");
         translated(() -> {
             ui.rejectUnknown(KEYS, OPEN_PREFIXES);
@@ -111,7 +109,7 @@ final class UiConfigLoader {
      * default environment unnoticed. A config that cannot be read is reported when a test needs it, not here.
      */
     static void logEnvironment(String testName, Map<String, String> xmlParameters) {
-        String environment = environment(xmlParameters);
+        String environment = Config.environmentFrom(xmlParameters);
         String files;
         try {
             files = String.join(" + ", Config.load(environment, null).files());
@@ -124,11 +122,6 @@ final class UiConfigLoader {
                     RETIRED_CONFIG, retired.trim(), ENV, testName, environment, files);
         }
         LOG.info("<test> '{}' runs on env '{}' ({})", testName, environment, files);
-    }
-
-    private static String environment(Map<String, String> xmlParameters) {
-        String named = xmlParameters.get(ENV);
-        return isPresent(named) ? named.trim() : DEFAULT_ENV;
     }
 
     /** The base URL of the named app ({@code ui.apps.<name>.url}), for the page that needs it. */

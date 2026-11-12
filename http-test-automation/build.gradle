@@ -12,4 +12,7 @@ dependencies {
     implementation libs.slf4j.api
     // Reads test-automation.yaml; none of its types is part of the API (root ADR-0006).
     implementation project(':config-loader')
+    // Reads the suite's <parameter name="env"> for HttpServiceClient(service); consumers run TestNG (root ADR-0008).
+    // No TestNG type is part of the API (ADR-0002).
+    implementation libs.testng
 }

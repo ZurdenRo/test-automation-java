@@ -37,8 +37,7 @@ final class MobileConfigLoader {
     static final String DEVICES = "devices";
     private static final String SECRETS = "secrets";
 
-    static final String ENV = "env";
-    static final String DEFAULT_ENV = Config.DEFAULT_ENV;
+    static final String ENV = Config.ENV_PARAMETER;
     static final String PLATFORM = "platform";
 
     private static final Logger LOG = LoggerFactory.getLogger(MobileConfigLoader.class);
@@ -64,10 +63,9 @@ final class MobileConfigLoader {
 
     /** @param env where secrets are read from, and nothing else */
     static MobileConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
-        String environment = environment(xmlParameters);
-        String origin = isPresent(xmlParameters.get(ENV)) ? "for <parameter> " + ENV + " '" + environment + "'"
-                : "for env '" + environment + "', the default; name another with <parameter> " + ENV;
-        Config config = translated(() -> Config.load(environment, origin));
+        String environment = Config.environmentFrom(xmlParameters);
+        String causeMsg = Config.environmentCauseMsg(xmlParameters);
+        Config config = translated(() -> Config.load(environment, causeMsg));
         Section mobile = config.section("mobile");
         MobileConfigLoader loader = new MobileConfigLoader(config, mobile, env);
         Platform platform = platform(xmlParameters);
@@ -107,7 +105,7 @@ final class MobileConfigLoader {
 
     /** Logs the environment, its files and the platform a TestNG {@code <test>} runs on, once; a platform not supported fails here. */
     static void logEnvironment(String testName, Map<String, String> xmlParameters) {
-        String environment = environment(xmlParameters);
+        String environment = Config.environmentFrom(xmlParameters);
         String files;
         try {
             files = String.join(" + ", Config.load(environment, null).files());
@@ -127,11 +125,6 @@ final class MobileConfigLoader {
             }
         }
         return keys;
-    }
-
-    private static String environment(Map<String, String> xmlParameters) {
-        String named = xmlParameters.get(ENV);
-        return isPresent(named) ? named.trim() : DEFAULT_ENV;
     }
 
     private static Platform platform(Map<String, String> xmlParameters) {

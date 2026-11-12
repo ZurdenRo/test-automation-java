@@ -35,6 +35,8 @@ public final class Config {
 
     public static final String COMMON_FILE = "test-automation.yaml";
     public static final String DEFAULT_ENV = "qa";
+    /** The TestNG {@code <parameter>} that names the suite's environment (root docs/adr/0002). */
+    public static final String ENV_PARAMETER = "env";
 
     private static final Set<String> SECTIONS = Set.of("ui", "services", "mobile");
     private static final Pattern ENV_NAME = Pattern.compile("[A-Za-z0-9_-]+");
@@ -50,6 +52,29 @@ public final class Config {
         this.entries = entries;
     }
 
+    /**
+     * The environment that {@code <parameter name="env">} names among a TestNG {@code <test>}'s parameters, trimmed,
+     * or {@link #DEFAULT_ENV} when it is absent or blank.
+     */
+    public static String environmentFrom(Map<String, String> parameters) {
+        String named = parameters.get(ENV_PARAMETER);
+        return named != null && !named.trim().isEmpty() ? named.trim() : DEFAULT_ENV;
+    }
+
+    /**
+     * Why {@link #environmentFrom} picked its environment, and what to change, for the error when the environment's
+     * file is missing: the suite xml names it, or it names none and the default was used.
+     */
+    public static String environmentCauseMsg(Map<String, String> parameters) {
+        String environment = environmentFrom(parameters);
+        String named = parameters.get(ENV_PARAMETER);
+        return named != null && !named.trim().isEmpty()
+                ? "cause: the suite xml sets <parameter name=\"" + ENV_PARAMETER + "\" value=\"" + environment
+                        + "\"/>; add the file or fix the value"
+                : "cause: missing <parameter name=\"" + ENV_PARAMETER + "\"> in the suite xml, so the default env '"
+                        + environment + "' was used; add the parameter or the file";
+    }
+
     /** The file that names an environment's own settings. */
     public static String environmentFile(String environment) {
         return "test-automation-" + environment + ".yaml";
@@ -58,10 +83,11 @@ public final class Config {
     /**
      * Reads the files for {@code environment} from the classpath.
      *
-     * @param origin where the environment's name came from, for the error when its file is missing, e.g.
-     *               {@code for <parameter> env 'staging'}; null when it needs no explaining
+     * @param causeMsg why this environment's file was looked for, put in brackets after the error when it is
+     *                 missing, e.g. {@code cause: the suite xml sets <parameter name="env" value="staging"/>; ...};
+     *                 null when it needs no explaining
      */
-    public static Config load(String environment, String origin) {
+    public static Config load(String environment, String causeMsg) {
         if (!ENV_NAME.matcher(environment).matches()) {
             throw new ConfigException("Environment '" + environment + "' is not a name: use letters, digits, '-' and"
                     + " '_', since it is part of the file name " + environmentFile("<env>"));
@@ -81,8 +107,8 @@ public final class Config {
         String file = environmentFile(environment);
         String own = readResource(loader, file);
         if (own == null) {
-            throw new ConfigException("Config file '" + file + "'" + (origin == null ? "" : " (" + origin + ")")
-                    + " not found on the classpath");
+            throw new ConfigException("Config file '" + file + "' not found on the classpath"
+                    + (causeMsg == null ? "" : " (" + causeMsg + ")"));
         }
         overlay(merged, parse(file, own));
         files.add(file);

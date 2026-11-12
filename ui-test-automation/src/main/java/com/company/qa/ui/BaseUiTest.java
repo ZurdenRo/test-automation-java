@@ -62,8 +62,8 @@ public abstract class BaseUiTest {
 
     /**
      * The suite's environment: {@code qa} unless {@code <parameter name="env">} names another. Its settings come from
-     * {@code test-automation-<env>.yaml}; a service client names its environment the same way, such as
-     * {@code new UsersClient(environment())}, so one parameter moves the whole test.
+     * {@code test-automation-<env>.yaml}; a service client built with only its service reads the same parameter,
+     * so one parameter moves the whole test.
      */
     protected String environment() {
         return uiContext.get().environment();

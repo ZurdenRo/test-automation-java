@@ -153,8 +153,8 @@ class ConfigTest {
         UiConfigException e = assertThrows(UiConfigException.class,
                 () -> UiConfigLoader.load(Map.of("env", "prod")));
 
-        assertEquals("Config file 'test-automation-prod.yaml' (for <parameter> env 'prod') not found on the"
-                + " classpath", e.getMessage());
+        assertEquals("Config file 'test-automation-prod.yaml' not found on the classpath (cause: the suite xml sets"
+                + " <parameter name=\"env\" value=\"prod\"/>; add the file or fix the value)", e.getMessage());
     }
 
     @Test
@@ -163,8 +163,9 @@ class ConfigTest {
 
         UiConfigException e = assertThrows(UiConfigException.class, () -> UiConfigLoader.load(Map.of()));
 
-        assertEquals("Config file 'test-automation-qa.yaml' (for env 'qa', the default; name another with"
-                + " <parameter> env) not found on the classpath", e.getMessage());
+        assertEquals("Config file 'test-automation-qa.yaml' not found on the classpath (cause: missing <parameter"
+                + " name=\"env\"> in the suite xml, so the default env 'qa' was used; add the parameter or the file)",
+                e.getMessage());
     }
 
     @Test

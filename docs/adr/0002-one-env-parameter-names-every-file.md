@@ -1,6 +1,8 @@
 # One `env` parameter picks every module's file
 
 > Partly superseded by [0005](0005-config-comes-from-yaml-a-shared-file-and-one-per-environment.md): the files are `test-automation-<env>.yaml`, one set for all modules, and http reads `services.<name>`. The `env` parameter still stands.
+>
+> Its last consequence is superseded by [0008](0008-http-reads-env-from-the-running-testng-test.md): http reads `env` from the running TestNG test.
 
 
 A suite names its environment once, with `<parameter name="env" value="staging"/>`, and every config file it reads is named after it: `<name>-<env>.properties`. UI tests read `ui-test-<env>.properties` and expose the environment with `environment()`, so a service client used by the same test names its file the same way: `new UsersClient(environment())` reads `users-service-<env>.properties`. Without the parameter the environment is `qa`, which is also what running a single test from the IDE uses.
