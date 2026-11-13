@@ -1,6 +1,6 @@
 # The published API exposes no third-party types; its dependencies are Apache HttpClient and Jackson
 
-This module is consumed by other teams, so its classpath is theirs. Apache HttpClient and Jackson are declared `implementation` (never `api`) and each is confined to one package-private class; no third-party type appears in any public signature. Both still reach the consumer's runtime classpath (Gradle publishes `implementation` as `runtime` scope), so they are the only third-party dependencies this module may carry. Config is `.properties`, which the JDK reads, so there is no YAML/JSON config parser either.
+This module is consumed by other teams, so its classpath is theirs. Apache HttpClient and Jackson are declared `implementation` (never `api`) and each is confined to one package-private class; no third-party type appears in any public signature. Both still reach the consumer's runtime classpath (Gradle publishes `implementation` as `runtime` scope), as does the YAML parser of `config-loader` (root ADR-0006), which no type of leaks into the API. They are the only third-party dependencies this module may carry.
 
 A dependency published by a library is resolved into every consumer, where Gradle raises conflicts to the highest version, which we never tested. Hiding Apache made ADR-0001 cheap: swapping 4.x for 5.x broke no one.
 
