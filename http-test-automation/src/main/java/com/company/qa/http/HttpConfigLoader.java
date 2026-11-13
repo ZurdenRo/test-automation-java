@@ -50,16 +50,13 @@ final class HttpConfigLoader {
     /**
      * @param serviceName the service's name under {@code services}, or null when there is no config
      * @param environment the environment whose files are read; ignored without a service
-     * @param environmentCauseMsg why this environment was picked, for errors; null when it needs no explaining
      * @param overrides   settings given directly to the builder, by key
      * @param env         where secrets are read from, and nothing else
      */
-    static HttpConfig load(String serviceName, String environment, String environmentCauseMsg,
-                           Map<String, String> overrides,
+    static HttpConfig load(String serviceName, String environment, Map<String, String> overrides,
                            Headers builderHeaders, Map<String, String> env) {
         Config config = serviceName == null ? null : translated(() ->
-                Config.load(environment, "needed by service client '" + serviceName + "'"
-                        + (environmentCauseMsg == null ? "" : ", " + environmentCauseMsg)));
+                Config.load(environment, "needed by service client '" + serviceName + "'"));
         Section service = serviceName == null ? null : config.section("services." + serviceName);
         if (service != null) {
             translated(() -> {

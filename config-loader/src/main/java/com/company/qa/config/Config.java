@@ -65,7 +65,7 @@ public final class Config {
      * Why {@link #environmentFrom} picked its environment, and what to change, for the error when the environment's
      * file is missing: the suite xml names it, or it names none and the default was used.
      */
-    public static String environmentCauseMsg(Map<String, String> parameters) {
+    public static String possibleEnvironmentErrorMsg(Map<String, String> parameters) {
         String environment = environmentFrom(parameters);
         String named = parameters.get(ENV_PARAMETER);
         return named != null && !named.trim().isEmpty()
@@ -83,11 +83,11 @@ public final class Config {
     /**
      * Reads the files for {@code environment} from the classpath.
      *
-     * @param causeMsg why this environment's file was looked for, put in brackets after the error when it is
-     *                 missing, e.g. {@code cause: the suite xml sets <parameter name="env" value="staging"/>; ...};
-     *                 null when it needs no explaining
+     * @param possibleErrorMsg why this environment's file was looked for, put in brackets after the error when it is
+     *                         missing, e.g. {@code cause: the suite xml sets <parameter name="env"
+     *                         value="staging"/>; ...}; null when it needs no explaining
      */
-    public static Config load(String environment, String causeMsg) {
+    public static Config load(String environment, String possibleErrorMsg) {
         if (!ENV_NAME.matcher(environment).matches()) {
             throw new ConfigException("Environment '" + environment + "' is not a name: use letters, digits, '-' and"
                     + " '_', since it is part of the file name " + environmentFile("<env>"));
@@ -108,7 +108,7 @@ public final class Config {
         String own = readResource(loader, file);
         if (own == null) {
             throw new ConfigException("Config file '" + file + "' not found on the classpath"
-                    + (causeMsg == null ? "" : " (" + causeMsg + ")"));
+                    + (possibleErrorMsg == null ? "" : " (" + possibleErrorMsg + ")"));
         }
         overlay(merged, parse(file, own));
         files.add(file);

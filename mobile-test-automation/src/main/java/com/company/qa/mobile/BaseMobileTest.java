@@ -1,11 +1,13 @@
 package com.company.qa.mobile;
 
+import com.company.qa.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 
@@ -24,11 +26,18 @@ public abstract class BaseMobileTest {
 
     // TestNG shares one instance across threads when it runs methods in parallel.
     private final ThreadLocal<MobileSession> session = new ThreadLocal<>();
+    private volatile String environment;
 
     /** Logs, once per {@code <test>}, the environment and platform it runs on. */
     @BeforeTest(alwaysRun = true)
     public void logEnvironment(ITestContext context) {
         MobileConfigLoader.logEnvironment(context.getName(), context.getCurrentXmlTest().getAllParameters());
+    }
+
+    /** Reads the suite's environment once per test class, so that a {@code @BeforeClass} method can use it. */
+    @BeforeClass(alwaysRun = true)
+    public void readEnvironment(ITestContext context) {
+        environment = Config.environmentFrom(context.getCurrentXmlTest().getAllParameters());
     }
 
     @BeforeMethod(alwaysRun = true)
@@ -56,11 +65,17 @@ public abstract class BaseMobileTest {
 
     /**
      * The suite's environment: {@code qa} unless {@code <parameter name="env">} names another. Its settings come from
-     * {@code test-automation-<env>.yaml}; a service client built with only its service reads the same parameter,
-     * so one parameter moves the whole test.
+     * {@code test-automation-<env>.yaml}. Pass it to the service clients of the test, so that one parameter moves the
+     * whole test: {@code new UsersClient(environment())}. Available from a {@code @BeforeClass} method on, where a
+     * client is best created (one per class); a field initializer or a constructor of the test class runs before.
      */
     protected String environment() {
-        return session.get().environment();
+        if (environment == null) {
+            throw new IllegalStateException("environment() is available from a @BeforeClass method on: TestNG reads"
+                    + " the suite's parameters after it builds the test class, so not in a field initializer or a"
+                    + " constructor");
+        }
+        return environment;
     }
 
     /**

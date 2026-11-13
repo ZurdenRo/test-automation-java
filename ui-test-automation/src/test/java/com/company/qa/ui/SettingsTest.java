@@ -70,6 +70,40 @@ class SettingsTest {
                 .assertAllPassed();
     }
 
+    @Test
+    void theEnvironmentIsAvailableInBeforeClassOfEachXmlTest() {
+        ConsumerRun.in(classpathDir)
+                .resource("test-automation-staging.yaml", ConsumerRun.uiYaml(Map.of("apps.shop.url", site.url())))
+                .config("apps.shop.url", site.url())
+                .xmlTest("on qa", Map.of())
+                .xmlTest("on staging", Map.of("env", "staging"))
+                .run(ReadsEnvironmentInBeforeClassTest.class)
+                .assertAllPassed();
+
+        assertEquals(List.of("qa", "staging"), ReadsEnvironmentInBeforeClassTest.SEEN);
+    }
+
+    @Test
+    void theEnvironmentIsNotAvailableWhileTheTestClassIsBuilt() {
+        IllegalStateException e = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> new BaseUiTest() { }.environment());
+
+        assertTrue(e.getMessage().contains("available from a @BeforeClass method on"), e.getMessage());
+    }
+
+    public static class ReadsEnvironmentInBeforeClassTest extends BaseUiTest {
+        static final List<String> SEEN = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+        @org.testng.annotations.BeforeClass
+        public void readEnvironmentLikeAClientWould() {
+            SEEN.add(environment());
+        }
+
+        @org.testng.annotations.Test
+        public void runs() {
+        }
+    }
+
     public static class ProbePage extends ShopPage {
         public ProbePage(Page page) {
             super(page);

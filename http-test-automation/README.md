@@ -7,8 +7,8 @@ Talk to an HTTP service from tests through one pooled connection layer. You writ
 ```java
 public class UsersClient extends HttpServiceClient {
 
-    public UsersClient() {
-        super("users");   // services.users in test-automation-<env>.yaml, <env> from the TestNG suite
+    public UsersClient(String env) {
+        super("users", env);   // services.users in test-automation-<env>.yaml on the classpath
     }
 
     public HttpResponse getUser(int id) {
@@ -73,26 +73,41 @@ The file of another environment (`test-automation-dev.yaml` with `api-token: PAY
 
 ## Configuration
 
-Settings live in YAML on the test classpath (`src/test/resources`): `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares, each service under `services.<name>`. Other modules read their own sections of the same files. The environment is the running TestNG `<test>`'s: `<parameter name="env" value="staging"/>` in the suite, or `qa` without it, the same one its UI and mobile tests use. Create the client in a `@BeforeClass` or `@BeforeMethod` method, or in a test: in a field initializer or a constructor of the test class no test is running yet, and the client fails saying so.
+Settings live in YAML on the test classpath (`src/test/resources`): `test-automation-<env>.yaml` for each environment, laid over an optional `test-automation.yaml` with what every environment shares, each service under `services.<name>`. Other modules read their own sections of the same files. A test passes the suite's environment to the client: the library does not know TestNG. A UI or mobile test has `environment()` (the suite's `env`, or `qa`), available from a `@BeforeClass` method on, so one client serves the whole class:
 
 ```java
-public class UsersTest {
+public class OrderShowsInShopTest extends BaseUiTest {
 
-    private UsersClient users;
+    private OrdersClient orders;
 
     @BeforeClass
     public void openClient() {
-        users = new UsersClient();
+        orders = new OrdersClient(environment());
     }
 
     @AfterClass(alwaysRun = true)
     public void closeClient() throws IOException {
-        users.close();
+        orders.close();
     }
 }
 ```
 
-To run a client on another environment than its test, name it: `super("users", "qa")`.
+A test of an API alone takes the parameter from TestNG, with the same default:
+
+```java
+public class OrdersApiTest {
+
+    private OrdersClient orders;
+
+    @Parameters("env")
+    @BeforeClass
+    public void openClient(@Optional("qa") String env) {
+        orders = new OrdersClient(env);
+    }
+}
+```
+
+Name the parameter exactly `env`: a different name is not an error, the test runs on `qa`.
 
 ```yaml
 # test-automation.yaml                      # test-automation-qa.yaml

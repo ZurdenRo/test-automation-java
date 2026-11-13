@@ -14,7 +14,6 @@ public final class HttpTransportBuilder {
     private final Map<String, String> overrides = new HashMap<>();
     private String service;
     private String environment;
-    private String environmentCauseMsg;
     private Headers defaultHeaders = Headers.empty();
     private BodyCodec bodyCodec = new JacksonBodyCodec();
     private Map<String, String> secretsEnv = System.getenv();
@@ -26,14 +25,6 @@ public final class HttpTransportBuilder {
     public HttpTransportBuilder service(String service, String environment) {
         this.service = Objects.requireNonNull(service, "service");
         this.environment = Objects.requireNonNull(environment, "environment");
-        this.environmentCauseMsg = "cause: the client names env '" + environment + "' in its code";
-        return this;
-    }
-
-    /** As {@link #service(String, String)}, saying in errors why this environment was picked. */
-    HttpTransportBuilder service(String service, String environment, String environmentCauseMsg) {
-        service(service, environment);
-        this.environmentCauseMsg = environmentCauseMsg;
         return this;
     }
 
@@ -77,7 +68,7 @@ public final class HttpTransportBuilder {
 
     HttpTransport build() {
         return new HttpTransport(
-                HttpConfigLoader.load(service, environment, environmentCauseMsg, overrides, defaultHeaders, secretsEnv),
+                HttpConfigLoader.load(service, environment, overrides, defaultHeaders, secretsEnv),
                 bodyCodec);
     }
 
