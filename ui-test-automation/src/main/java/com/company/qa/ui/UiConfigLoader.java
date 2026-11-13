@@ -70,8 +70,8 @@ final class UiConfigLoader {
     /** @param env where secrets are read from, and nothing else */
     static UiConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
         String environment = Config.environmentFrom(xmlParameters);
-        String causeMsg = Config.environmentCauseMsg(xmlParameters);
-        Config config = translated(() -> Config.load(environment, causeMsg));
+        String possibleErrorMsg = Config.possibleEnvironmentErrorMsg(xmlParameters);
+        Config config = translated(() -> Config.load(environment, possibleErrorMsg));
         Section ui = config.section("ui");
         translated(() -> {
             ui.rejectUnknown(KEYS, OPEN_PREFIXES);

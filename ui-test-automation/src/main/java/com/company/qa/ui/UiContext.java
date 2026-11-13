@@ -34,10 +34,6 @@ final class UiContext {
         this.page = context.newPage();
     }
 
-    String environment() {
-        return config.environment();
-    }
-
     String secret(String app, String name) {
         return config.secret(app, name);
     }

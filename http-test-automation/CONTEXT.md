@@ -8,10 +8,6 @@ A published library that lets test projects talk to HTTP services through one sh
 A consumer project's own class, written by the consumer, that extends the library's base class and exposes its service's endpoints as methods (e.g. `getUser(42)`). Tests talk to it, never to raw paths.
 _Avoid_: Transport, base client, API wrapper
 
-**Environment**:
-The name (`qa`, `staging`) that picks the config files a service client reads. A client given only its service takes it from the running TestNG `<test>`'s `<parameter name="env">`, or `qa` without one, as UI and mobile tests do; consumers always run TestNG (root `docs/adr/0008`).
-_Avoid_: Env file, profile, stage
-
 **Transport**:
 The library's internal object behind a service client: bound to one base URL, it executes requests over a pool of reusable connections. Consumers never see it.
 _Avoid_: Client, HttpClient

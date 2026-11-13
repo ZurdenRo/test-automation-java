@@ -58,10 +58,6 @@ final class MobileSession {
         }
     }
 
-    String environment() {
-        return config.environment();
-    }
-
     String secret(String name) {
         return config.secret(name);
     }

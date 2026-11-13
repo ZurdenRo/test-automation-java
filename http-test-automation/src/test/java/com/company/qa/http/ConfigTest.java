@@ -95,7 +95,7 @@ class ConfigTest {
                 new HttpTransportBuilder().service("payments", "absent").build());
 
         assertEquals("Config file 'test-automation-absent.yaml' not found on the classpath (needed by service client"
-                + " 'payments', cause: the client names env 'absent' in its code)", e.getMessage());
+                + " 'payments')", e.getMessage());
     }
 
     @Test

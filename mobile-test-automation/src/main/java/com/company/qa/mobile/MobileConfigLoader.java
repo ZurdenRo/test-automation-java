@@ -64,8 +64,8 @@ final class MobileConfigLoader {
     /** @param env where secrets are read from, and nothing else */
     static MobileConfig load(Map<String, String> xmlParameters, Map<String, String> env) {
         String environment = Config.environmentFrom(xmlParameters);
-        String causeMsg = Config.environmentCauseMsg(xmlParameters);
-        Config config = translated(() -> Config.load(environment, causeMsg));
+        String possibleErrorMsg = Config.possibleEnvironmentErrorMsg(xmlParameters);
+        Config config = translated(() -> Config.load(environment, possibleErrorMsg));
         Section mobile = config.section("mobile");
         MobileConfigLoader loader = new MobileConfigLoader(config, mobile, env);
         Platform platform = platform(xmlParameters);

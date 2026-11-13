@@ -161,7 +161,7 @@ public class ViewsTest extends BaseMobileTest {
 }
 ```
 
-`secret("admin-password")` returns the value of the environment variable that `mobile.secrets.admin-password` names. Pass it to a screen, and never log it. `environment()` returns the suite's `env`, so a service client reads its section for the same environment.
+`secret("admin-password")` returns the value of the environment variable that `mobile.secrets.admin-password` names. Pass it to a screen, and never log it. `environment()` returns the suite's `env`, so a service client reads its section for the same environment: `new UsersClient(environment())` in a `@BeforeClass` method (it is not available in a field initializer or a constructor of the test class).
 
 The suite picks the environment and the platform once, with two parameters. To run methods in parallel, list one device per thread. A thread that finds no free device waits for one.
 
