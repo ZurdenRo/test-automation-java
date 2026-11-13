@@ -1,15 +1,12 @@
-# Environment variables hold secrets only; settings come from `.properties` files
+# Environment variables hold secrets only; settings come from the YAML config
 
-> Partly superseded by [0005](0005-config-comes-from-yaml-a-shared-file-and-one-per-environment.md): settings come from YAML, not `.properties`. Environment variables holding secrets only still stands.
+In every module, a test run's settings (URLs, browser, timeouts) come from the YAML config checked in with the consumer's tests (`test-automation-<env>.yaml`, ADR-0005), and environment variables are read only for secrets: keys, passwords, users. A setting cannot be overridden by an environment variable, and a secret is never written in the config: the config names the variable that holds it.
 
-
-In every module, a test run's settings (URLs, browser, timeouts) come from `.properties` resources checked in with the consumer's tests, and environment variables are read only for secrets: keys, passwords, users. A setting cannot be overridden by an environment variable, and a secret is never written in a `.properties` file.
-
-Both modules first let an environment variable override any setting (`QA_HTTP_<RESOURCE>_BASE_URL`, `QA_UI_HEADLESS`), the usual twelve-factor shape. We dropped that: with two places for every setting, what a run used depended on the shell it ran in, and reading a checked-in file no longer told you. Switching environments is done by choosing a file instead: a suite names its environment with the `env` parameter, and each file is named after it (ADR-0002).
+Both modules first let an environment variable override any setting (`QA_HTTP_<RESOURCE>_BASE_URL`, `QA_UI_HEADLESS`), the usual twelve-factor shape. We dropped that: with two places for every setting, what a run used depended on the shell it ran in, and reading a checked-in file no longer told you. Switching environments is done by choosing a file instead: a suite names its environment with the `env` parameter, and the file is named after it (ADR-0002).
 
 ## Consequences
 
-- What a run used is readable from the repository: the suite xml names the file, the file holds the values.
-- One file per environment, so a value shared by all of them is repeated in each.
+- What a run used is readable from the repository: the suite xml names the environment, the files hold the values.
+- One file per environment over a shared one, so a value common to all of them is written once (ADR-0005).
 - CI chooses an environment by choosing a suite, not by exporting variables; it exports only secrets.
-- In http-test-automation a setting comes from the builder or the service config; `HttpTransportBuilder.envPrefix(...)` and `.environment(...)` were removed before the first release.
+- In http-test-automation a setting comes from the builder or the service config, never from the environment.
