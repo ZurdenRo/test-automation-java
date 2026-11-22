@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EvidenceTest {
@@ -44,8 +45,68 @@ class EvidenceTest {
         Path dir = evidenceDir.resolve(FailsTest.class.getName());
         assertArrayEquals(FakeAppium.SCREENSHOT, Files.readAllBytes(dir.resolve("fails.png")));
         assertEquals(FakeAppium.PAGE_SOURCE, Files.readString(dir.resolve("fails.xml")));
-        assertEquals(String.join("\n", FakeAppium.LOGCAT) + "\n", Files.readString(dir.resolve("fails-logcat.txt")));
         assertEquals(0, appium.sessionsOpen());
+    }
+
+    @Test
+    void theDeviceLogKeepsTheLast25AppiumLinesAndTheCrashesOfTheApp() throws IOException {
+        run().run(FailsTest.class);
+
+        String log = Files.readString(evidenceDir.resolve(FailsTest.class.getName()).resolve("fails-logcat.txt"));
+        String deviceLog = log.substring(log.indexOf("== Device log"));
+        assertTrue(deviceLog.startsWith("== Device log (last 25 appium and crash lines) ==\n"), deviceLog);
+        assertTrue(deviceLog.contains("appium line 30\n"), deviceLog);
+        assertTrue(deviceLog.contains("appium line 7\n"), deviceLog);
+        assertFalse(deviceLog.contains("appium line 6\n"), deviceLog);
+        assertTrue(deviceLog.contains("FATAL EXCEPTION: main"), deviceLog);
+        assertFalse(deviceLog.contains("WindowManager"), deviceLog);
+        assertFalse(deviceLog.contains("OtherTag"), deviceLog);
+    }
+
+    @Test
+    void theFailureIsSummarisedWithoutSeleniumsBoilerplate() throws IOException {
+        run().run(SeleniumFailsTest.class);
+
+        String log = Files.readString(evidenceDir.resolve(SeleniumFailsTest.class.getName())
+                .resolve("fails-logcat.txt"));
+        String failure = log.substring(0, log.indexOf("== Device log"));
+        assertTrue(failure.startsWith("== Failure ==\nNoSuchElementException: An element could not be located"),
+                failure);
+        assertTrue(failure.contains("  caused by IllegalStateException: root cause\n"), failure);
+        assertTrue(failure.contains("\n  at "), failure);
+        assertFalse(failure.contains("Build info"), failure);
+        assertFalse(failure.contains("For documentation"), failure);
+    }
+
+    @Test
+    void theDeviceLogIsReadBeforeTheScreenshotAddsItsOwnLines() throws IOException {
+        run().run(FailsTest.class);
+
+        List<String> requests = appium.requests();
+        int log = indexOfEnding(requests, "/se/log");
+        assertTrue(log >= 0 && log < indexOfEnding(requests, "/screenshot"), requests::toString);
+        assertTrue(log < indexOfEnding(requests, "/source"), requests::toString);
+    }
+
+    @Test
+    void theFailureIsKeptEvenIfTheDeviceLogCannotBeRead() throws IOException {
+        appium.refuseLog(true);
+
+        run().run(SeleniumFailsTest.class);
+
+        String log = Files.readString(evidenceDir.resolve(SeleniumFailsTest.class.getName())
+                .resolve("fails-logcat.txt"));
+        assertTrue(log.startsWith("== Failure ==\nNoSuchElementException"), log);
+        assertTrue(log.contains("(could not read the device log: "), log);
+    }
+
+    private static int indexOfEnding(List<String> requests, String suffix) {
+        for (int i = 0; i < requests.size(); i++) {
+            if (requests.get(i).endsWith(suffix)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     // JDK 11's HttpClient trips its own assert reading a large body when assertions are on (-ea), as Gradle and
@@ -85,7 +146,8 @@ class EvidenceTest {
 
         assertEquals(List.of("fails"), results.failed());
         assertTrue(results.failure("fails") instanceof AssertionError, results::summary);
-        assertEquals(List.of(), files());
+        // Only the failure summary survives: it needs neither the server nor the device.
+        assertEquals(List.of("fails-logcat.txt"), files());
         assertEquals(0, appium.sessionsOpen());
     }
 
@@ -108,6 +170,16 @@ class EvidenceTest {
         @org.testng.annotations.Test
         public void fails() {
             throw new AssertionError("the screen is not the one expected");
+        }
+    }
+
+    public static class SeleniumFailsTest extends BaseMobileTest {
+        @org.testng.annotations.Test
+        public void fails() {
+            throw new org.openqa.selenium.NoSuchElementException("An element could not be located on the page\n"
+                    + "For documentation on this error, please visit: https://example.org\n"
+                    + "Build info: version: '4.50.0'\nSystem info: os.name: 'Linux'",
+                    new IllegalStateException("root cause"));
         }
     }
 

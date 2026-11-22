@@ -27,6 +27,7 @@ final class FakeAppium implements AutoCloseable {
     private final AtomicInteger elementAfterLookups = new AtomicInteger(Integer.MAX_VALUE);
     private volatile boolean refuseSessions;
     private volatile boolean refuseEvidence;
+    private volatile boolean refuseLog;
     private volatile String pageSource = PAGE_SOURCE;
 
     FakeAppium() {
@@ -76,8 +77,19 @@ final class FakeAppium implements AutoCloseable {
     static final byte[] SCREENSHOT = java.util.Base64.getDecoder().decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
     static final String PAGE_SOURCE = "<hierarchy><node text=\"Save\"/></hierarchy>";
-    static final List<String> LOGCAT = List.of("10-24 10:00:00.000 I/Todo(1): started",
-            "10-24 10:00:01.000 E/Todo(1): boom");
+    /** A device's log: 30 appium lines among noise, then the app crashing. */
+    static final List<String> LOGCAT = logcat();
+
+    private static List<String> logcat() {
+        List<String> lines = new java.util.ArrayList<>();
+        for (int n = 1; n <= 30; n++) {
+            lines.add(String.format("11-22 16:49:%02d.451  5325  5360 I appium  : appium line %d", n, n));
+            lines.add(String.format("11-22 16:49:%02d.452   542  2652 D WindowManager: noise %d", n, n));
+        }
+        lines.add("11-22 16:50:00.000  7000  7000 E AndroidRuntime: FATAL EXCEPTION: main");
+        lines.add("11-22 16:50:00.001  7000  7000 E OtherTag: not a crash");
+        return lines;
+    }
 
     /** The page source the server returns from now on. */
     void pageSource(String source) {
@@ -100,6 +112,11 @@ final class FakeAppium implements AutoCloseable {
         refuseEvidence = refuse;
     }
 
+    /** Makes only the log request fail, as when the device went away after the failure. */
+    void refuseLog(boolean refuse) {
+        refuseLog = refuse;
+    }
+
     private void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
@@ -120,7 +137,8 @@ final class FakeAppium implements AutoCloseable {
         } else if (method.equals("DELETE") && path.matches("/session/[^/]+")) {
             open.decrementAndGet();
             reply(exchange, 200, "{\"value\":null}");
-        } else if (path.matches("/session/[^/]+/(screenshot|source|se/log)") && refuseEvidence) {
+        } else if (path.matches("/session/[^/]+/(screenshot|source|se/log)") && (refuseEvidence
+                || (refuseLog && path.endsWith("/se/log")))) {
             reply(exchange, 500, "{\"value\":{\"error\":\"invalid session id\",\"message\":\"gone\",\"stacktrace\":\"\"}}");
         } else if (method.equals("GET") && path.endsWith("/screenshot")) {
             reply(exchange, 200, "{\"value\":\"" + java.util.Base64.getEncoder().encodeToString(SCREENSHOT) + "\"}");

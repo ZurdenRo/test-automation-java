@@ -57,5 +57,5 @@ A user, password or key a test needs. It lives only in an environment variable; 
 _Avoid_: Credential, sensitive setting
 
 **Failure evidence**:
-What the library keeps when a test fails, so it can be diagnosed without re-running: always a screenshot, the screen's UI hierarchy (Appium's page source) and the device log (logcat on Android) of that test's session.
+What the library keeps when a test fails, so it can be diagnosed without re-running: always a screenshot, the screen's UI hierarchy (Appium's page source) and a log file of that test's session: a summary of the failure (the exceptions and the consumer's line that threw) followed by the last 25 lines of the device log (logcat on Android) that explain it, the Appium server's own and the app's crashes, not the whole log.
 _Avoid_: Artifacts, attachments, reports
