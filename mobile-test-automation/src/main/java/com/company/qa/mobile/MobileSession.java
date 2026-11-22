@@ -3,7 +3,6 @@ package com.company.qa.mobile;
 import com.company.qa.mobile.android.AndroidSessions;
 import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.OutputType;
-import org.openqa.selenium.logging.LogEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +23,8 @@ import java.util.List;
 final class MobileSession {
 
     private static final Logger LOG = LoggerFactory.getLogger(MobileSession.class);
+
+    private static final int DEVICE_LOG_LINES = 25;
 
     private final MobileConfig config;
     private final DevicePool pool;
@@ -87,18 +88,20 @@ final class MobileSession {
      *
      * @param testClass  names the evidence directory
      * @param testMethod names the evidence files; a second failure of the same method gets {@code -2}
+     * @param failure    why the test failed, or {@code null} if it passed
      * @return the evidence files kept, none for a test that passed
      */
-    List<Path> close(String testClass, String testMethod, boolean failed) {
+    List<Path> close(String testClass, String testMethod, Throwable failure) {
         List<Path> evidence = new ArrayList<>();
         try {
-            if (failed) {
+            if (failure != null) {
                 Path stem = unusedStem(config.evidenceDir().resolve(testClass), testMethod);
+                // The device log first: taking the screenshot and the page source adds appium lines of its own.
+                String logType = config.platform().logType();
+                keep(evidence, sibling(stem, "-" + logType + ".txt"), () -> failureLog(failure, logType));
                 keep(evidence, sibling(stem, ".png"), () -> driver.getScreenshotAs(OutputType.BYTES));
                 keep(evidence, sibling(stem, ".xml"),
                         () -> driver.getPageSource().getBytes(StandardCharsets.UTF_8));
-                String logType = config.platform().logType();
-                keep(evidence, sibling(stem, "-" + logType + ".txt"), () -> deviceLog(logType));
             }
         } finally {
             try {
@@ -111,13 +114,18 @@ final class MobileSession {
         return evidence;
     }
 
-    /** What the device logged since the session started: the session is the test's, so this is only its lines. */
-    private byte[] deviceLog(String logType) {
-        StringBuilder log = new StringBuilder();
-        for (LogEntry entry : driver.manage().logs().get(logType)) {
-            log.append(entry.getMessage()).append('\n');
+    /** Why the test failed, then the last lines the Appium server logged on the device. Written even without the log. */
+    private byte[] failureLog(Throwable failure, String logType) {
+        StringBuilder text = new StringBuilder("== Failure ==\n").append(FailureSummary.of(failure))
+                .append("\n== Device log (last ").append(DEVICE_LOG_LINES).append(" appium and crash lines) ==\n");
+        try {
+            for (String line : DeviceLog.lastLines(driver.manage().logs().get(logType), DEVICE_LOG_LINES)) {
+                text.append(line).append('\n');
+            }
+        } catch (RuntimeException e) {
+            text.append("(could not read the device log: ").append(firstLine(e.getMessage())).append(")\n");
         }
-        return log.toString().getBytes(StandardCharsets.UTF_8);
+        return text.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private void keep(List<Path> evidence, Path file, java.util.function.Supplier<byte[]> content) {

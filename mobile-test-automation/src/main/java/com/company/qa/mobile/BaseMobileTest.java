@@ -52,15 +52,20 @@ public abstract class BaseMobileTest {
         MobileSession current = session.get();
         if (current != null) {
             session.remove();
-            boolean failed = result.getStatus() == ITestResult.FAILURE;
+            Throwable failure = result.getStatus() == ITestResult.FAILURE ? failureOf(result) : null;
             List<Path> evidence = current.close(result.getTestClass().getName(), result.getMethod().getMethodName(),
-                    failed);
+                    failure);
             for (Path file : evidence) {
                 Reporter.log("Failure evidence: " + file.toAbsolutePath());
                 LOG.info("Failure evidence of {}.{}: {}", result.getTestClass().getName(),
                         result.getMethod().getMethodName(), file.toAbsolutePath());
             }
         }
+    }
+
+    private static Throwable failureOf(ITestResult result) {
+        Throwable thrown = result.getThrowable();
+        return thrown != null ? thrown : new AssertionError("the test failed without an exception");
     }
 
     /**

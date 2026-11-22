@@ -112,7 +112,7 @@ class SessionTest {
         assertTrue(e.getMessage().endsWith("Device emulator-9999 is not connected"), e.getMessage());
         // The only device went back to the pool: starting again takes it at once instead of timing out.
         appium.refuseSessions(false);
-        MobileSession.start(config).close("Class", "method", false);
+        MobileSession.start(config).close("Class", "method", null);
         assertEquals(1, appium.sessionsCreated());
         assertEquals(0, appium.sessionsOpen());
     }
